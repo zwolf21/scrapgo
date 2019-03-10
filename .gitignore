@@ -1,0 +1,15 @@
+/[Ss]cripts/
+/[Bb]in/
+/[Ll]ib/
+/[Tt]cl/
+/[Ii]nclude/
+__pycache__/
+.vscode/
+man/
+.DS_STORE
+.Python
+*.py[cod]
+pip-selfcheck.json
+*.sqlite*
+/dist
+/*.egg-info
