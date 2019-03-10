@@ -1,4 +1,5 @@
-from scrapgo import Scraper, location, href, src
+from scrapgo.scraper import Scraper
+from scrapgo.actions import location, href, src
 
 
 class NaverWebtoonScraper(Scraper):
