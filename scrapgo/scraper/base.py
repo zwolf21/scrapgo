@@ -15,9 +15,9 @@ class BaseScraper(SoupParserMixin):
         super().__init__(**kwargs)
         self.ROOT_URL = self.ROOT_URL or root
 
-    def _get(self, link):
+    def _get(self, link, cache):
         url = abs_path(self.ROOT_URL, link)
-        return self.requests_manager._get(url)
+        return self.requests_manager._get(url, cache=cache)
 
     def _get_fuction(self, func, kind='urlfilter'):
         if callable(func):
@@ -27,13 +27,13 @@ class BaseScraper(SoupParserMixin):
                 return getattr(self, func)
         return self. main_urlfilter if kind == 'urlfilter' else self.default_parser
 
-    def _scrap_links(self, root, link_pattern, urlfilter, context=None, recursive=None):
+    def _scrap_links(self, root, link_pattern, urlfilter, context=None, recursive=None, cache=True):
         linkstack = SetStack([root])
         visited = set()
 
         while linkstack:
             root = linkstack.pop()
-            requests = self._get(root)
+            requests = self._get(root, cache)
             for link in self._parse_link(requests, link_pattern):
                 if link not in visited:
                     visited.add(link)

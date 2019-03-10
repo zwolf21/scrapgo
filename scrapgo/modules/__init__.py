@@ -1,2 +1,2 @@
-from .requests_manager.manager import *
+from .request.manager import *
 from .soup_parser.parser import *

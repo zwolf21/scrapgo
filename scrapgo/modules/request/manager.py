@@ -1,5 +1,6 @@
 import requests
 import requests_cache
+from requests_cache.backends.base import BaseCache
 from fake_useragent import FakeUserAgent
 
 from scrapgo import settings
@@ -26,8 +27,12 @@ class RequestsManager(object):
         if use_session:
             self.requests = requests.Session()
 
-    def _get(self, url, params=None):
-        return self.requests.get(url, params=params, headers=self.request_header)
+    def _get(self, url, cache=True, **kwargs):
+        if cache == True:
+            return self.requests.get(url, headers=self.request_header, **kwargs)
+        with requests_cache.disabled():
+            print('manager.py:disable_cache', url)
+            return self.requests.get(url, headers=self.request_header, **kwargs)
 
     def _post(self, url, data=None):
         return self.requests.post(url, data, headers=self.request_header)
