@@ -15,9 +15,9 @@ class BaseScraper(SoupParserMixin):
         super().__init__(**kwargs)
         self.ROOT_URL = self.ROOT_URL or root
 
-    def _get(self, link, cache):
+    def get(self, link, cache, headers=None):
         url = abs_path(self.ROOT_URL, link)
-        return self.requests_manager._get(url, cache=cache)
+        return self.requests_manager._get(url, cache=cache, headers=headers)
 
     def _get_fuction(self, func, kind='urlfilter'):
         if callable(func):
@@ -27,13 +27,15 @@ class BaseScraper(SoupParserMixin):
                 return getattr(self, func)
         return self. main_urlfilter if kind == 'urlfilter' else self.default_parser
 
-    def _scrap_links(self, root, link_pattern, urlfilter, context=None, recursive=None, cache=True):
-        linkstack = SetStack([root])
+    def _scrap_links(self, root, link_pattern, urlfilter, context=None, recursive=None, cache=True, set_headers=None):
+        linkstack = SetStack([(root, self.requests_manager.get_header())])
         visited = set()
-
+        set_headers = set_headers or (
+            lambda location, previous, headers: headers
+        )
         while linkstack:
-            root = linkstack.pop()
-            requests = self._get(root, cache)
+            root, headers = linkstack.pop()
+            requests = self.get(root, cache=cache, headers=headers)
             for link in self._parse_link(requests, link_pattern):
                 if link not in visited:
                     visited.add(link)
@@ -41,7 +43,9 @@ class BaseScraper(SoupParserMixin):
                         continue
                     if urlfilter(link, link_pattern, context=context):
                         if recursive:
-                            linkstack.push(link)
+                            current_headers = self.requests_manager.get_header()
+                            headers = set_headers(link, root, current_headers)
+                            linkstack.push((link, headers))
                         yield link
 
     def main_urlfilter(self, url, pattern, context=None):

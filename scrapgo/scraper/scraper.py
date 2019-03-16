@@ -32,7 +32,7 @@ class Scraper(BaseScraper):
             parser = self._get_fuction(action.parser, 'parser')
             if isinstance(action, Location):
                 url = self.ROOT_URL if action.url == '/' else action.url
-                r = self._get(url, caching)
+                r = self.get(url, caching)
                 soup = self._get_soup(r.content)
                 parsed = parser(url, re.compile(url).match(url), soup=soup)
                 self.reducer(parsed, name)
@@ -43,7 +43,7 @@ class Scraper(BaseScraper):
                 recursive = action.recursive
                 for url in urls:
                     for link in self._scrap_links(url, pattern, urlfilter, context, recursive):
-                        r = self._get(link, caching)
+                        r = self.get(link, caching)
                         match = pattern.match(link).group
                         soup = self._get_soup(r.content)
                         parsed = parser(link, match, soup=soup)
@@ -54,7 +54,7 @@ class Scraper(BaseScraper):
                 urlfilter = self._get_fuction(action.urlfilter)
                 for url in urls:
                     for src in self._scrap_links(url, pattern, urlfilter, context):
-                        r = self._get(src, caching)
+                        r = self.get(src, caching)
                         match = pattern.match(src).group
                         parsed = parser(src, match, content=r.content)
                         self.reducer(parsed, name)
