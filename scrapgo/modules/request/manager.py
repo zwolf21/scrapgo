@@ -27,12 +27,14 @@ class RequestsManager(object):
         if use_session:
             self.requests = requests.Session()
 
-    def _get(self, url, cache=True, **kwargs):
+    def _get(self, url, cache=True, headers=None, **kwargs):
+        headers = headers or self.request_header
         if cache == True:
-            return self.requests.get(url, headers=self.request_header, **kwargs)
+            return self.requests.get(url, headers=headers, **kwargs)
         with requests_cache.disabled():
             print('manager.py:disable_cache', url)
-            return self.requests.get(url, headers=self.request_header, **kwargs)
+            return self.requests.get(url, headers=headers, **kwargs)
 
-    def _post(self, url, data=None):
-        return self.requests.post(url, data, headers=self.request_header)
+    def _post(self, url, headers=None, data=None, **kwargs):
+        headers = headers or self.request_header
+        return self.requests.post(url, data, headers=headers, **kwargs)
