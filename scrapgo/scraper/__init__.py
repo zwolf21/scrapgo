@@ -1,5 +1,6 @@
-from .scraper import *
+from .requests.scraper import *
+from .requests.actions import *
 
 __all__ = [
-    'Scraper'
+    'RequestsSoupScraper', 'href', 'src', 'location'
 ]

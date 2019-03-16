@@ -15,8 +15,8 @@ class SoupParserMixin(object):
     def _get_soup(self, content):
         return BeautifulSoup(content, self.parser)
 
-    def _parse_link(self, requests, link_pattern, attrs=settings.SCRAP_TARGET_ATTRS):
-        soup = self._get_soup(requests.content)
+    def _parse_link(self, response, link_pattern, attrs=settings.SCRAP_TARGET_ATTRS):
+        soup = self._get_soup(response.content)
         parsed = set()
         pattern = re.compile(link_pattern)
         for attr in attrs:

@@ -1,5 +1,5 @@
-from .manager import *
+from .cached_requests import *
 
 __all__ = [
-    'RequestsManager'
+    'CachedRequests'
 ]

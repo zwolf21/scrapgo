@@ -2,11 +2,8 @@ from datetime import timedelta
 
 
 # Request
-USER_AGENT = 'chrome'
+USER_AGENT_NAME = 'chrome'
 
-REQUEST_HEADER = {
-    'User-Agent': USER_AGENT
-}
 
 CACHE_NAME = 'REQUEST_CACHE'
 CACHE_BACKEND = 'sqlite'
