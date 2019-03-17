@@ -26,12 +26,10 @@ class CachedRequests(object):
 
     def _get(self, url, headers=None, refresh=False):
         headers = headers or self.headers
-        print('CachedRequests:url=', url)
         if refresh:
             if self.requests.cache.has_url(url):
                 self.requests.cache.delete_url(url)
         r = self.requests.get(url, headers=headers)
-        print('CachedRequests:r.from_cache=', r.from_cache, '\n')
         r.raise_for_status()
         return r
 

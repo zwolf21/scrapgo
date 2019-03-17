@@ -1,4 +1,7 @@
+import os
 from io import BytesIO
+
+from listorm import Listorm
 
 from scrapgo.scraper import RequestsSoupScraper, href, location, src
 
@@ -33,12 +36,19 @@ class NaverWebToonScraper(RequestsSoupScraper):
         ),
         src(
             r'^https://shared-comic.pstatic.net/thumb/webtoon/(?P<titleId>\d+)/(?P<no>\d+)/(?P<filename>.+)$',
-            parser='episode_thumb_parser', name='episode_thumb'
+            parser='episode_thumb_parser', name='episode_thumb',
+            refresh=True,
+            set_header='episode_cut_set_header'
         ),
         href(
             r'^/webtoon/detail.nhn\?titleId=(?P<titleId>\d+)&no=(?P<no>\d+)&weekday=(?P<weekday>\w*)$',
             parser='episode_parser', name='episode'
         ),
+        src(
+            r'^https://image-comic.pstatic.net/webtoon/(?P<titleId>\d+)/(?P<no>\d+)/(?P<filename>.+)$',
+            parser='episode_cut_parser', name='episode_cut',
+            set_header='episode_cut_set_header'
+        )
 
     ]
 
@@ -48,10 +58,6 @@ class NaverWebToonScraper(RequestsSoupScraper):
             if titleId == match('titleId'):
                 # print('mainfilter:link=', link, '\n')
                 return True
-
-    def root_parser(self, response, match, soup, context):
-        # print('root_parser:', response.url, '\n')
-        return
 
     def toon_parser(self, response, match, soup, context):
         titlebar = soup.title.text.split('::')
@@ -63,7 +69,7 @@ class NaverWebToonScraper(RequestsSoupScraper):
         author = soup.select('span.wrt_nm')[0].text.strip()
 
         return {
-            'title': title,
+            'toon_title': title,
             'author': author,
             'titleId': titleId,
             'weekday': weekday,
@@ -82,23 +88,51 @@ class NaverWebToonScraper(RequestsSoupScraper):
             'titleId': match('titleId'),
             'no': match('no'),
             'episode_thumbnail_filename': match('filename'),
-            'episode_thumb_content': BytesIO(response.content),
+            'episode_thumb_content': response.content,
         }
 
-    def episode_cut_parser(self, link, match, content):
+    def episode_cut_set_header(self, location, previous, headers):
+        headers['Referer'] = previous
+        return headers
+
+    def episode_cut_parser(self, response, match, soup, context):
         return {
             'titleId': match('titleId'),
             'no': match('no'),
             'episode_cut_filename': match('filename'),
+            'episode_cut_content': response.content
         }
 
 
-n = NaverWebToonScraper()
-# print(n.SCRAP_RELAY)
-r = n.scrap(context={'titleId': '642653'})
+def _save_file(path, content):
+    with open(path,  'wb') as fp:
+        fp.write(content)
 
 
-for name, row in r.items():
-    if name == 'episode':
-        for r in row:
-            print(r)
+def retrive_webtoon(titleId, where='./media'):
+    n = NaverWebToonScraper()
+    r = n.scrap(context={'titleId': titleId})
+    toon = Listorm(r['toon'])
+    episode = Listorm(r['episode'])
+    episode_cut = Listorm(r['episode_cut'])
+    episode_thumb = Listorm(r['episode_thumb'])
+
+    toon_info = toon.join(episode, on='titleId')
+    cut_info = episode_cut.join(toon_info, on='no')
+    cut_info = cut_info.join(episode_thumb, on='no')
+    for cut in cut_info:
+        toon_path = os.path.join(where, cut.toon_title)
+        os.makedirs(toon_path, exist_ok=True)
+        episode_path = os.path.join(toon_path, cut.episode_title)
+        os.makedirs(episode_path, exist_ok=True)
+        episode_cut_content = cut.episode_cut_content
+        episode_thumb_content = cut.episode_thumb_content
+        _save_file(os.path.join(
+            episode_path, cut.episode_cut_filename), episode_cut_content)
+        _save_file(os.path.join(
+            episode_path, cut.episode_thumbnail_filename), episode_thumb_content)
+
+    return cut_info
+
+
+r = retrive_webtoon('642653')
