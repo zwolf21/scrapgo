@@ -10,10 +10,11 @@ class RequestsSoupScraper(SoupParserMixin, CachedRequests):
     ROOT_URL = None
     SCRAP_RELAY = None
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, context=None, **kwargs):
         super().__init__(*args, **kwargs)
         self._set_root()
         self.visited_cache = {}
+        self.context = context or {}
 
     def _set_root(self):
         if self.ROOT_URL is None:
@@ -40,7 +41,7 @@ class RequestsSoupScraper(SoupParserMixin, CachedRequests):
         return {
             'filter': self.main_filter,
             'parser': self.default_parser,
-            'set_header': self.set_header
+            'set_header': self.set_headers
         }[kind]
 
     def _get_action(self, name):
@@ -56,9 +57,14 @@ class RequestsSoupScraper(SoupParserMixin, CachedRequests):
     def _crawl(self, root, pattern, filter, parser, set_header, action, context, recursive, refresh):
         linkstack = SetStack([(root, self.get_header())])
         visited = set()
+        first = True
         while linkstack:
             root, headers = linkstack.pop()
             response = self.get(root, headers=headers, refresh=refresh)
+            if first:
+                previous = response.url
+                first = False
+
             for link in self._parse_link(response, pattern):
                 if link not in visited:
                     visited.add(link)
@@ -68,17 +74,18 @@ class RequestsSoupScraper(SoupParserMixin, CachedRequests):
                         continue
                     if filter(link, match, context=context):
                         location = abs_path(self.ROOT_URL, link)
-                        previous = abs_path(self.ROOT_URL, root)
                         hdr = set_header(location, previous, headers)
                         rsp = self.get(link, headers=hdr, refresh=refresh)
+                        setattr(rsp, 'previous', previous)
                         soup = None
                         if not isinstance(action, Source):
                             soup = self._get_soup(rsp.content)
                             if recursive:
                                 linkstack.push((link, hdr))
+
                         yield link, parser(rsp, match, soup, context=context)
 
-    def scrap(self, context=None, until=None):
+    def scrap(self, until=None):
         results = defaultdict(list)
         urls = []
 
@@ -98,7 +105,7 @@ class RequestsSoupScraper(SoupParserMixin, CachedRequests):
                 response = self.get(act.url, hdr, refresh)
                 match = re.compile(act.url).match(act.url).group
                 soup = self._get_soup(response.content)
-                parsed = parser(response, match, soup, context=context)
+                parsed = parser(response, match, soup, context=self.context)
                 self.reducer(parsed, name, results)
                 continue
                 pattern = act.url
@@ -106,7 +113,7 @@ class RequestsSoupScraper(SoupParserMixin, CachedRequests):
                 pattern = act.pattern
 
             for url in urls:
-                for link, parsed in self._crawl(url, pattern, filter, parser, set_header, act, context=context, recursive=recursive, refresh=refresh):
+                for link, parsed in self._crawl(url, pattern, filter, parser, set_header, act, context=self.context, recursive=recursive, refresh=refresh):
                     self.reducer(parsed, name, results)
                     if not isinstance(act, Source):
                         next_urls.append(link)
