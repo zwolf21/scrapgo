@@ -1,7 +1,7 @@
 from collections import abc
 
 from scrapgo.modules import CachedRequests, SoupParserMixin
-from .base import RequestsSoupCrawler
+from .crawler import RequestsSoupCrawler
 from .actions import *
 
 
