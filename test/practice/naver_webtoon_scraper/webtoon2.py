@@ -3,12 +3,12 @@ from io import BytesIO
 
 from listorm import Listorm
 
-from scrapgo.scraper import RequestsSoupScraper, href, location, src
+from scrapgo.scraper import LinkPatternScraper, href, location, src
 from .parsers import *
 
 
-class NaverWebToonScraper(RequestsSoupScraper):
-    SCRAP_RELAY = [
+class NaverWebToonScraper(LinkPatternScraper):
+    LINK_PATTERNS = [
         location(
             'https://comic.naver.com/webtoon/weekday.nhn',
             filter='root_filter',

@@ -25,7 +25,7 @@ def toon_parser(response, match, soup, context):
     weekday = match('weekday')
     author = soup.select('span.wrt_nm')[0].text.strip()
 
-    toon_path = os.path.join(context[response.previous], title)
+    toon_path = os.path.join(context[response.referer], title)
     mkdir_p(toon_path)
     context[response.url] = toon_path
 
@@ -38,17 +38,17 @@ def toon_parser(response, match, soup, context):
 
 
 def toon_thumb_parser(response, match, soup, context):
-    toon_path = context[response.previous]
+    toon_path = context[response.referer]
     path = os.path.join(toon_path, match('filename'))
     cp(path, response.content)
 
 
 def episode_pagination_parser(response, match, soup, context):
-    context[response.url] = context[response.previous]
+    context[response.url] = context[response.referer]
 
 
 def episode_thumb_parser(response, match, soup, context):
-    episode_path = context[response.previous]
+    episode_path = context[response.referer]
     EpThumb = namedtuple('EpThumb', 'titleId no filename content')
     thumb = EpThumb(
         match('titleId'), match('no'), match('filename'), response.content
@@ -61,7 +61,7 @@ def episode_parser(response, match, soup, context):
     episode_no = match('no')
     titleId = match('titleId')
 
-    toon_path = context[response.previous]
+    toon_path = context[response.referer]
     episode_path = os.path.join(toon_path, episode_title)
     mkdir_p(episode_path)
     context[response.url] = episode_path
@@ -74,7 +74,7 @@ def episode_parser(response, match, soup, context):
 
 
 def episode_cut_parser(response, match, soup, context):
-    episode_path = context[response.previous]
+    episode_path = context[response.referer]
     path = os.path.join(episode_path, match('filename'))
     cp(path, response.content)
 

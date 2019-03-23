@@ -28,6 +28,7 @@ class CachedRequests(object):
         headers = headers or self.headers
         if refresh:
             if self.requests.cache.has_url(url):
+                # print('CachedRequests._get:url=(from_cached)', url)
                 self.requests.cache.delete_url(url)
         r = self.requests.get(url, headers=headers)
         r.raise_for_status()
