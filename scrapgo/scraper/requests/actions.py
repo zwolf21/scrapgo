@@ -19,6 +19,8 @@ def _set_header(location, previous, headers):
 
 
 def location(url, filter=None, parser=None, name=None, recursive=False, refresh=True, set_header=None):
+    if isinstance(url, (str, bytes)):
+        url = [url]
     return Location(
         url,
         filter,
@@ -71,7 +73,7 @@ class LinkPatternContainerMixin(object):
             ]
             if not locations:
                 raise ValueError(error_message)
-            self.ROOT_URL = locations[0].url
+            self.ROOT_URL = locations[0].url[0]
         elif self.LINK_PATTERNS is None:
             if self.ROOT_URL is None:
                 raise ValueError(error_message)
@@ -90,6 +92,7 @@ class LinkPatternContainerMixin(object):
                 elif isinstance(action, Source):
                     next_urls += handle_source(action, root, context, results)
             urls = next_urls
+            # print('next_urls:', next_urls)
         return results
 
     def get_action(self, name):

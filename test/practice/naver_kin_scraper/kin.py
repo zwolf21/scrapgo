@@ -10,6 +10,7 @@ from scrapgo.modules.output.render import ImageReferer, render_img2referer
 class NaverKinScraper(LinkPatternScraper):
     ROOT_URL = 'https://kin.naver.com/search/list.nhn'
     SCRAP_TARGET_ATTRS = settings.SCRAP_TARGET_ATTRS + ('content', )
+    REQUEST_DELAY = 0.2
 
     LINK_PATTERNS = [
         href(
@@ -41,7 +42,7 @@ class NaverKinScraper(LinkPatternScraper):
 
     def result_detail_parser(self, response, match, soup, context):
         context[response.url] = []
-        # print(response.url)
+        print(response.url)
 
     def result_img_parser(self, response, match, content, context):
         fn = match('filename')

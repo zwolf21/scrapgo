@@ -1,3 +1,5 @@
+import time
+
 import requests
 import requests_cache
 from requests_cache.backends.base import BaseCache
@@ -8,6 +10,8 @@ from scrapgo import settings
 
 class CachedRequests(object):
     USER_AGENT_NAME = settings.USER_AGENT_NAME  # default to 'chrome'
+    HEADERS = None
+    REQUEST_DELAY = settings.REQUEST_DELAY
     CACHE_NAME = settings.CACHE_NAME
     CACHE_BACKEND = settings.CACHE_BACKEND
     CACHE_EXPIRATION = settings.CACHE_EXPIRATION
@@ -17,6 +21,8 @@ class CachedRequests(object):
         self.headers = {
             'User-Agent': getattr(FakeUserAgent(), self.USER_AGENT_NAME)
         }
+        if self.HEADERS:
+            self.headers.update(self.HEADERS)
 
         self.requests = requests_cache.CachedSession(
             cache_name=self.CACHE_NAME,
@@ -28,10 +34,16 @@ class CachedRequests(object):
         headers = headers or self.headers
         if refresh:
             if self.requests.cache.has_url(url):
-                # print('CachedRequests._get:url=(from_cached)', url)
                 self.requests.cache.delete_url(url)
+                # print('CachedRequests._get:url=(from_cached:False)', url)
         r = self.requests.get(url, params=params, headers=headers)
         r.raise_for_status()
+        # print('CachedRequests._get:from_cached', r.from_cache, url)
+        if r.from_cache == False:
+            time.sleep(self.REQUEST_DELAY)
+        if not r.content:
+            self.requests.cache.delete_url(url)
+            # print('CachedRequests._get:no_content!', r.url)
         return r
 
     def _post(self, url, headers=None, data=None, **kwargs):

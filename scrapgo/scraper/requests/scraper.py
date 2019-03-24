@@ -9,8 +9,8 @@ class LinkPatternScraper(LinkPatternContainerMixin, RequestsSoupCrawler):
 
     def __init__(self, context=None, **kwargs):
         self.context = context or {}
-        super().__init__(**kwargs)
         self._set_root(self.ROOT_URL)
+        super().__init__(**kwargs)
 
     def _get_method(self, func, kind):
         if callable(func):
@@ -37,14 +37,17 @@ class LinkPatternScraper(LinkPatternContainerMixin, RequestsSoupCrawler):
     def _handle_location(self, action, context, results):
         parser = self._get_method(action.parser, 'parser')
         set_header = self._get_method(action.set_header, 'set_header')
-        url = self.ROOT_URL if action.url == '/' else action.url
-        headers = set_header(url, url, self.get_header())
-        response = self.get(url, headers=headers, refresh=action.refresh)
-        match = None
-        soup = self._get_soup(response.content)
-        parsed = parser(response, match, soup, context=context)
-        self.reducer(parsed, action.name, results)
-        return [action.url]
+        urls = []
+        for url in action.url:
+            url = self.ROOT_URL if url == '/' else url
+            headers = set_header(url, url, self.get_header())
+            response = self.get(url, headers=headers, refresh=action.refresh)
+            match = None
+            soup = self._get_soup(response.content)
+            parsed = parser(response, match, soup, context=context)
+            self.reducer(parsed, action.name, results)
+            urls.append(url)
+        return urls
 
     def _handle_link(self, action, root, context, results):
         kwargs = {

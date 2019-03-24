@@ -5,7 +5,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Request
 USER_AGENT_NAME = 'chrome'
-
+REQUEST_DELAY = 0.5
 
 CACHE_NAME = 'REQUEST_CACHE'
 CACHE_BACKEND = 'sqlite'
