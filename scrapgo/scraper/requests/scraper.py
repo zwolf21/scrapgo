@@ -7,9 +7,9 @@ from .actions import *
 
 class LinkPatternScraper(LinkPatternContainerMixin, RequestsSoupCrawler):
 
-    def __init__(self, *args, context=None, **kwargs):
+    def __init__(self, context=None, **kwargs):
         self.context = context or {}
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
         self._set_root(self.ROOT_URL)
 
     def _get_method(self, func, kind):
@@ -39,7 +39,7 @@ class LinkPatternScraper(LinkPatternContainerMixin, RequestsSoupCrawler):
         set_header = self._get_method(action.set_header, 'set_header')
         url = self.ROOT_URL if action.url == '/' else action.url
         headers = set_header(url, url, self.get_header())
-        response = self.get(url, headers, action.refresh)
+        response = self.get(url, headers=headers, refresh=action.refresh)
         match = None
         soup = self._get_soup(response.content)
         parsed = parser(response, match, soup, context=context)

@@ -24,19 +24,19 @@ class CachedRequests(object):
             expire_after=self.CACHE_EXPIRATION
         )
 
-    def _get(self, url, headers=None, refresh=False):
+    def _get(self, url, params=None, headers=None, refresh=False):
         headers = headers or self.headers
         if refresh:
             if self.requests.cache.has_url(url):
                 # print('CachedRequests._get:url=(from_cached)', url)
                 self.requests.cache.delete_url(url)
-        r = self.requests.get(url, headers=headers)
+        r = self.requests.get(url, params=params, headers=headers)
         r.raise_for_status()
         return r
 
     def _post(self, url, headers=None, data=None, **kwargs):
         headers = headers or self.headers
-        return self.requests.post(url, data, headers=headers, **kwargs)
+        return self.requests.post(url, data=data, headers=headers, **kwargs)
 
     def get_header(self):
         return self.headers.copy()

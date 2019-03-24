@@ -7,6 +7,7 @@ from scrapgo import settings
 
 
 class SoupParserMixin(object):
+    SCRAP_TARGET_ATTRS = settings.SCRAP_TARGET_ATTRS
 
     def __init__(self, parser=settings.BEAUTIFULSOUP_PARSER, **kwargs):
         super().__init__(**kwargs)
@@ -15,11 +16,11 @@ class SoupParserMixin(object):
     def _get_soup(self, content):
         return BeautifulSoup(content, self.parser)
 
-    def _parse_link(self, response, link_pattern, attrs=settings.SCRAP_TARGET_ATTRS):
+    def _parse_link(self, response, link_pattern):
         soup = self._get_soup(response.content)
         parsed = set()
         pattern = re.compile(link_pattern)
-        for attr in attrs:
+        for attr in self.SCRAP_TARGET_ATTRS:
             for link in soup('', {attr: pattern}):
                 if link not in parsed:
                     parsed.add(link[attr])

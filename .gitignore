@@ -14,3 +14,4 @@ pip-selfcheck.json
 /dist
 /*.egg-info
 /media
+im/
