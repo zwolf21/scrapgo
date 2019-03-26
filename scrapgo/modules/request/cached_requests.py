@@ -35,12 +35,13 @@ class CachedRequests(object):
         if refresh:
             if self.requests.cache.has_url(url):
                 self.requests.cache.delete_url(url)
-                # print('CachedRequests._get:url=(from_cached:False)', url)
         r = self.requests.get(url, headers=headers, **kwargs)
         r.raise_for_status()
-        print('CachedRequests._get:from_cached', r.from_cache, url)
+
+        print('get {} from_cache = {}'.format(url, r.from_cache))
         if r.from_cache == False:
             time.sleep(self.REQUEST_DELAY)
+
         if not r.content:
             self.requests.cache.delete_url(url)
             print('Warning: {} has no content!'.format(r.url))

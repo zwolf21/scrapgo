@@ -1,5 +1,6 @@
 from collections import abc
 
+from scrapgo.utils.shortcuts import parse_query
 from scrapgo.modules import CachedRequests, SoupParserMixin
 from .crawler import RequestsSoupCrawler
 from .actions import *
@@ -8,9 +9,9 @@ from .actions import *
 class LinkPatternScraper(LinkPatternContainerMixin, RequestsSoupCrawler):
 
     def __init__(self, context=None, **kwargs):
-        self.context = context or {}
-        self._set_root(self.ROOT_URL)
         super().__init__(**kwargs)
+        self.context = context or {}
+        # self._set_root(self.ROOT_URL)
 
     def _get_method(self, func, kind):
         if callable(func):
@@ -22,13 +23,13 @@ class LinkPatternScraper(LinkPatternContainerMixin, RequestsSoupCrawler):
         return {
             'filter': self.main_filter,
             'parser': self.default_parser,
-            'set_header': self.set_headers
+            'set_header': self.set_headers,
         }[kind]
 
     def default_parser(self, response, match, soup, context=None):
         return
 
-    def main_filter(self, link, match, context=None):
+    def main_filter(self, link, query, match, context=None):
         return True
 
     def set_headers(self, location, previous, headers):
@@ -36,22 +37,26 @@ class LinkPatternScraper(LinkPatternContainerMixin, RequestsSoupCrawler):
 
     def _handle_location(self, action, context, results):
         parser = self._get_method(action.parser, 'parser')
+        filter = self._get_method(action.filter, 'filter')
         set_header = self._get_method(action.set_header, 'set_header')
-        urls = []
-        for url in action.url:
-            url = self.ROOT_URL if url == '/' else url
-            headers = set_header(url, url, self.get_header())
-            response = self.get(url, headers=headers, refresh=action.refresh)
-            match = None
-            soup = self._get_soup(response.content)
-            parsed = parser(response, match, soup, context=context)
-            self.reducer(parsed, action.name, results)
-            urls.append(url)
-        return urls
+        url = self.ROOT_URL if action.url == '/' else action.url
+        headers = set_header(url, url, self.get_header())
+        query = parse_query(url)
+        match = None
+        if not self.main_filter(url, query, match, context=context):
+            return []
 
-    def _handle_link(self, action, root, context, results):
+        if not filter(url, query, match, context=context):
+            return []
+        response = self.get(url, headers=headers, refresh=action.refresh)
+        soup = self._get_soup(response.content)
+        parsed = parser(response, query, soup, context=context)
+        self.reducer(parsed, action.name, results)
+        return [response]
+
+    def _handle_link(self, action, response, context, results):
         kwargs = {
-            'root': root,
+            'response': response,
             'pattern': action.pattern,
             'filter': self._get_method(action.filter, 'filter'),
             'set_header': self._get_method(action.set_header, 'set_header'),
@@ -60,14 +65,14 @@ class LinkPatternScraper(LinkPatternContainerMixin, RequestsSoupCrawler):
             'recursive': action.recursive,
             'refresh': action.refresh
         }
-        next_urls = []
-        for link, parsed in self._crawl(**kwargs):
-            next_urls.append(link)
+        next_responses = []
+        for rsp, parsed in self._crawl(**kwargs):
+            next_responses.append(rsp)
             self.reducer(parsed, action.name, results)
         if isinstance(action, Source):
-            return [root]
+            return [response]
         else:
-            return next_urls
+            return next_responses
 
     def reducer(self, parsed, name, results):
         if parsed is None:
@@ -81,6 +86,7 @@ class LinkPatternScraper(LinkPatternContainerMixin, RequestsSoupCrawler):
 
     def scrap(self, until=None):
         results = self._relay_patterns(
+            self.get(self.ROOT_URL),
             self._handle_location,
             self._handle_link,
             self._handle_link,

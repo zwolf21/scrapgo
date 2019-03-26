@@ -10,7 +10,6 @@ from scrapgo.modules.output.render import ImageReferer, render_img2referer
 class NaverKinScraper(LinkPatternScraper):
     ROOT_URL = 'https://kin.naver.com/search/list.nhn'
     SCRAP_TARGET_ATTRS = settings.SCRAP_TARGET_ATTRS + ('content', )
-    REQUEST_DELAY = 0.2
 
     LINK_PATTERNS = [
         href(
@@ -38,11 +37,10 @@ class NaverKinScraper(LinkPatternScraper):
         path = os.path.join(context['save_to'], query)
         context['query_path'] = path
         mkdir_p(path)
-        print('page_no:', match('page'))
 
     def result_detail_parser(self, response, match, soup, context):
         context[response.url] = []
-        print(response.url)
+        # print(response.url)
 
     def result_img_parser(self, response, match, content, context):
         fn = match('filename')
@@ -56,10 +54,17 @@ class NaverKinScraper(LinkPatternScraper):
         }
 
 
-nk = NaverKinScraper(params={'query': '파이썬 크롤링'},
-                     context={'save_to': 'media/kin'})
-# print(nk.LINK_PATTERNS)
-r = nk.scrap()
+# nk = NaverKinScraper(params={'query': '파이썬 크롤링'},
+#                      context={'save_to': 'media/kin'})
+# # print(nk.LINK_PATTERNS)
+# r = nk.scrap()
 
-save_to = os.path.join(nk.context['query_path'], 'results.html')
-render_img2referer(save_to, r['image'])
+# save_to = os.path.join(nk.context['query_path'], 'results.html')
+# render_img2referer(save_to, r['image'])
+
+
+def naver_kin_with_image(params, context):
+    nk = NaverKinScraper(params=params, context=context)
+    r = nk.scrap()
+    save_to = os.path.join(nk.context['query_path'], 'results.html')
+    render_img2referer(save_to, r['image'])

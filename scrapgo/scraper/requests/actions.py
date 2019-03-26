@@ -19,8 +19,6 @@ def _set_header(location, previous, headers):
 
 
 def location(url, filter=None, parser=None, name=None, recursive=False, refresh=True, set_header=None):
-    if isinstance(url, (str, bytes)):
-        url = [url]
     return Location(
         url,
         filter,
@@ -64,51 +62,30 @@ class LinkPatternContainerMixin(object):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _set_root(self, root=None):
-        error_message = \
-            'Define ROOT_URL or at least one location in SCRP_RELAY'
-        if root is None:
-            locations = [
-                act for act in self.LINK_PATTERNS if isinstance(act, Location)
-            ]
-            if not locations:
-                raise ValueError(error_message)
-            self.ROOT_URL = locations[0].url[0]
-        elif self.LINK_PATTERNS is None:
-            if self.ROOT_URL is None:
-                raise ValueError(error_message)
-            loc = location(self.ROOT_URL, refresh=True)
-
-    # def _relay_patterns(self, seed, handle_location, handle_link, handle_source, context):
-    #     results = defaultdict(list)
-    #     urls = [seed]
-    #     for action in self.LINK_PATTERNS:
-    #         next_urls = []
-    #         for root in urls:
-    #             if isinstance(action, Location):
-    #                 next_urls += handle_location(action, context, results)
-    #             elif isinstance(action, Link):
-    #                 next_urls += handle_link(action, root, context, results)
-    #             elif isinstance(action, Source):
-    #                 next_urls += handle_source(action, root, context, results)
-    #         urls = next_urls
-    #         # print('next_urls:', next_urls)
-    #     return results
-
-    def _relay_patterns(self, handle_location, handle_link, handle_source, context):
+    def _relay_patterns(self, seed, handle_location, handle_link, handle_source, context):
         results = defaultdict(list)
-        urls = []
-        for action in self.LINK_PATTERNS:
+        responses = []
+
+        for index, action in enumerate(self.LINK_PATTERNS):
+
             if isinstance(action, Location):
-                urls += handle_location(action, context, results)
+                responses += handle_location(action, context, results)
                 continue
-            next_urls = []
-            for root in urls:
+
+            if index == 0:
+                responses.append(seed)
+
+            next_responses = []
+            for response in responses:
                 if isinstance(action, Link):
-                    next_urls += handle_link(action, root, context, results)
+                    next_responses += handle_link(
+                        action, response, context, results
+                    )
                 else:
-                    next_urls += handle_source(action, root, context, results)
-            urls = next_urls
+                    next_responses += handle_source(
+                        action, response, context, results
+                    )
+            responses = next_responses
         return results
 
     def get_action(self, name):

@@ -1,16 +1,17 @@
 import os
 from io import BytesIO
 
-from listorm import Listorm
-
 from scrapgo.scraper import LinkPatternScraper, href, location, src
 from .parsers import *
 
 
 class NaverWebToonScraper(LinkPatternScraper):
+    ROOT_URL = 'https://comic.naver.com/webtoon/weekday.nhn'
+    REQUEST_DELAY = 0.1
+
     LINK_PATTERNS = [
         location(
-            'https://comic.naver.com/webtoon/weekday.nhn',
+            '/',
             filter='root_filter',
             parser=root_parser,
             refresh=True,
@@ -38,7 +39,6 @@ class NaverWebToonScraper(LinkPatternScraper):
             r'^https://shared-comic.pstatic.net/thumb/webtoon/(?P<titleId>\d+)/(?P<no>\d+)/(?P<filename>.+)$',
             parser=episode_thumb_parser,
             name='episode_thumb',
-            refresh=True,
             set_header='episode_cut_set_header'
         ),
         href(
@@ -55,21 +55,16 @@ class NaverWebToonScraper(LinkPatternScraper):
 
     ]
 
-    def main_filter(self, link, match, context):
+    def main_filter(self, link, query, match, context):
+        if not match:
+            return True
+
         titleId = context.get('titleId')
         if titleId:
             if titleId == match('titleId'):
-                # print('mainfilter:link=', link, '\n')
                 return True
 
 
-def retrive_webtoon(titleId):
-    context = {
-        'save_to': './media',
-        'titleId': titleId
-    }
+def retrive_webtoon(context):
     n = NaverWebToonScraper(context=context)
     return n.scrap()
-
-
-r = retrive_webtoon('642653')
