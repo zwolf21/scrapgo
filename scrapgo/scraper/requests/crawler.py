@@ -1,7 +1,10 @@
 import re
 import mimetypes
+from functools import lru_cache
+from collections import abc, UserDict
 
 from scrapgo.utils.urlparser import queryjoin, parse_src
+from scrapgo.lib.data_structure.hashable import kwargs2hashable
 from scrapgo.lib.data_structure import SetStack
 from scrapgo.utils.shortcuts import abs_path
 from scrapgo.modules import CachedRequests, SoupParserMixin
@@ -12,15 +15,13 @@ class RequestsSoupCrawler(SoupParserMixin, CachedRequests):
 
     def __init__(self, url=None, params=None, **kwargs):
         self.ROOT_URL = queryjoin(url or self.ROOT_URL, params)
-        self.visited_cache = {}
         super().__init__(**kwargs)
 
-    def get(self, link, params=None, headers=None, refresh=False):
+    @kwargs2hashable
+    @lru_cache(maxsize=128)
+    def get(self, link, refresh=False, **kwargs):
         url = abs_path(self.ROOT_URL, link)
-        if url in self.visited_cache:
-            return self.visited_cache[url]
-        r = self._get(url, params=params, headers=headers, refresh=refresh)
-        self.visited_cache[url] = r
+        r = self._get(url, refresh=refresh, **kwargs)
         return r
 
     def _crawl(self, root, pattern, filter, parser, set_header, context, recursive, refresh):

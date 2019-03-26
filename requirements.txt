@@ -1,13 +1,4 @@
-beautifulsoup4==4.7.1
-bs4==0.0.1
-certifi==2018.11.29
-chardet==3.0.4
-fake-useragent==0.1.11
-idna==2.8
-listorm==0.2.13
-requests==2.21.0
-requests-cache==0.4.13
-soupsieve==1.8
-urllib3==1.24.1
-xlrd==1.2.0
-XlsxWriter==1.1.5
+bs4
+fake-useragent
+requests
+requests-cache

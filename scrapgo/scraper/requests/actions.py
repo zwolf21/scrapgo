@@ -79,20 +79,36 @@ class LinkPatternContainerMixin(object):
                 raise ValueError(error_message)
             loc = location(self.ROOT_URL, refresh=True)
 
-    def _relay_patterns(self, seed, handle_location, handle_link, handle_source, context):
+    # def _relay_patterns(self, seed, handle_location, handle_link, handle_source, context):
+    #     results = defaultdict(list)
+    #     urls = [seed]
+    #     for action in self.LINK_PATTERNS:
+    #         next_urls = []
+    #         for root in urls:
+    #             if isinstance(action, Location):
+    #                 next_urls += handle_location(action, context, results)
+    #             elif isinstance(action, Link):
+    #                 next_urls += handle_link(action, root, context, results)
+    #             elif isinstance(action, Source):
+    #                 next_urls += handle_source(action, root, context, results)
+    #         urls = next_urls
+    #         # print('next_urls:', next_urls)
+    #     return results
+
+    def _relay_patterns(self, handle_location, handle_link, handle_source, context):
         results = defaultdict(list)
-        urls = [seed]
+        urls = []
         for action in self.LINK_PATTERNS:
+            if isinstance(action, Location):
+                urls += handle_location(action, context, results)
+                continue
             next_urls = []
             for root in urls:
-                if isinstance(action, Location):
-                    next_urls += handle_location(action, context, results)
-                elif isinstance(action, Link):
+                if isinstance(action, Link):
                     next_urls += handle_link(action, root, context, results)
-                elif isinstance(action, Source):
+                else:
                     next_urls += handle_source(action, root, context, results)
             urls = next_urls
-            # print('next_urls:', next_urls)
         return results
 
     def get_action(self, name):

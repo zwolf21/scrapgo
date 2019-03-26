@@ -81,7 +81,6 @@ class LinkPatternScraper(LinkPatternContainerMixin, RequestsSoupCrawler):
 
     def scrap(self, until=None):
         results = self._relay_patterns(
-            self.ROOT_URL,
             self._handle_location,
             self._handle_link,
             self._handle_link,

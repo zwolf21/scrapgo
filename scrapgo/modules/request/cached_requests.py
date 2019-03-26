@@ -30,20 +30,20 @@ class CachedRequests(object):
             expire_after=self.CACHE_EXPIRATION
         )
 
-    def _get(self, url, params=None, headers=None, refresh=False):
+    def _get(self, url, headers=None, refresh=False, **kwargs):
         headers = headers or self.headers
         if refresh:
             if self.requests.cache.has_url(url):
                 self.requests.cache.delete_url(url)
                 # print('CachedRequests._get:url=(from_cached:False)', url)
-        r = self.requests.get(url, params=params, headers=headers)
+        r = self.requests.get(url, headers=headers, **kwargs)
         r.raise_for_status()
-        # print('CachedRequests._get:from_cached', r.from_cache, url)
+        print('CachedRequests._get:from_cached', r.from_cache, url)
         if r.from_cache == False:
             time.sleep(self.REQUEST_DELAY)
         if not r.content:
             self.requests.cache.delete_url(url)
-            # print('CachedRequests._get:no_content!', r.url)
+            print('Warning: {} has no content!'.format(r.url))
         return r
 
     def _post(self, url, headers=None, data=None, **kwargs):
