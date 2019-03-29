@@ -11,7 +11,6 @@ class LinkPatternScraper(LinkPatternContainerMixin, RequestsSoupCrawler):
     def __init__(self, context=None, **kwargs):
         super().__init__(**kwargs)
         self.context = context or {}
-        # self._set_root(self.ROOT_URL)
 
     def _get_method(self, func, kind):
         if callable(func):
