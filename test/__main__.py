@@ -28,7 +28,7 @@ def main():
         'save_to': MEDIA_ROOT
     }
 
-    if app in ['webtoon']:
+    if app in ['webtoon', 'toon']:
         context['titleId'] = args.titleId
         retrive_webtoon(context)
 

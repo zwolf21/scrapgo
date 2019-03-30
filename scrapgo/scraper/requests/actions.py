@@ -1,6 +1,9 @@
 import re
 from collections import namedtuple, defaultdict
 
+from scrapgo.lib.data_structure import SetStack
+
+
 Location = namedtuple(
     'Location', 'url filter parser name recursive refresh set_header'
 )
@@ -67,6 +70,33 @@ class LinkPatternContainerMixin(object):
         responses = []
 
         for index, action in enumerate(self.LINK_PATTERNS):
+
+            if isinstance(action, Location):
+                responses += handle_location(action, context, results)
+                continue
+
+            if index == 0:
+                responses.append(seed)
+
+            next_responses = []
+            for response in responses:
+                if isinstance(action, Link):
+                    next_responses += handle_link(
+                        action, response, context, results
+                    )
+                else:
+                    next_responses += handle_source(
+                        action, response, context, results
+                    )
+            responses = next_responses
+        return results
+
+    def _relay_patterns(self, seed, handle_location, handle_link, handle_source, context):
+        results = defaultdict(list)
+        responses = []
+
+        for index, action in enumerate(self.LINK_PATTERNS):
+            rspstack = SetStack()
 
             if isinstance(action, Location):
                 responses += handle_location(action, context, results)
