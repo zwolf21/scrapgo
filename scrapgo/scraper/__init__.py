@@ -1,5 +1,5 @@
 from .requests.scraper import *
-from .requests.actions import *
+from .requests.action import *
 
 __all__ = [
     'LinkPatternScraper', 'href', 'src', 'location'

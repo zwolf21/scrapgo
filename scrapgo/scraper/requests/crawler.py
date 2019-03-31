@@ -14,9 +14,19 @@ class RequestsSoupCrawler(SoupParserMixin, CachedRequests):
         super().__init__(**kwargs)
         self.ROOT_URL = queryjoin(url or self.ROOT_URL, params)
 
-    def get(self, link, refresh=False, **kwargs):
+    def get(self, link, refresh=False, previous=None, **kwargs):
         url = abs_path(self.ROOT_URL, link)
-        return self._get(url, refresh=refresh, **kwargs)
+        r = self._get(url, refresh=refresh, **kwargs)
+        # trace, referer 설치
+        if previous:
+            setattr(r, 'referer', previous.url)
+            if not hasattr(previous, 'trace'):
+                setattr(previous, 'trace', [self.ROOT_URL])
+            setattr(r, 'trace', [url])
+            r.trace += previous.trace
+        else:
+            setattr(r, 'referer', self.ROOT_URL)
+        return r
 
     def _crawl(self, response, pattern, filter, parser, set_header, context, recursive, refresh):
         linkstack = SetStack([response])
@@ -39,8 +49,8 @@ class RequestsSoupCrawler(SoupParserMixin, CachedRequests):
                         location = abs_path(self.ROOT_URL, link)
                         headers = set_header(
                             location, previous, self.get_header())
-                        rsp = self.get(link, headers=headers, refresh=refresh)
-                        setattr(rsp, 'referer', previous)
+                        rsp = self.get(link, headers=headers,
+                                       refresh=refresh, previous=response)
                         src = parse_src(link)
                         content_type = mimetypes.guess_type(src)[0]
                         if content_type and 'image' in content_type:

@@ -3,7 +3,7 @@ from collections import abc
 from scrapgo.utils.shortcuts import parse_query
 from scrapgo.modules import CachedRequests, SoupParserMixin
 from .crawler import RequestsSoupCrawler
-from .actions import *
+from .action import *
 
 
 class LinkPatternScraper(LinkPatternContainerMixin, RequestsSoupCrawler):

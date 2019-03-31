@@ -60,7 +60,6 @@ def episode_parser(response, match, soup, context):
     episode_title = soup.select('div.tit_area > .view > h3')[0].text.strip()
     episode_no = match('no')
     titleId = match('titleId')
-
     toon_path = context[response.referer]
     episode_path = os.path.join(toon_path, episode_title)
     mkdir_p(episode_path)
@@ -78,6 +77,7 @@ def episode_cut_parser(response, match, soup, context):
     path = os.path.join(episode_path, match('filename'))
     cp(path, response.content)
 
+    print('episode_cut_parser', response.trace)
     titleId = match('titleId')
     no = match('no')
     episode_thumb = None
