@@ -1,5 +1,7 @@
 import argparse
 import os
+import sys
+
 
 from practice.naver_webtoon_scraper.webtoon2 import retrive_webtoon
 from practice.naver_kin_scraper.kin import naver_kin_with_image
