@@ -1,11 +1,12 @@
-import argparse
 import os
 import sys
 
+sys.path.append('.')
 
-from practice.naver_webtoon_scraper.webtoon2 import retrive_webtoon
+
 from practice.naver_kin_scraper.kin import naver_kin_with_image
-from practice.im.im_review_scraper import review
+from practice.naver_webtoon_scraper.webtoon2 import retrive_webtoon
+import argparse
 
 
 MEDIA_ROOT = 'media'
@@ -42,7 +43,7 @@ def main():
         context['save_to'] = os.path.join(MEDIA_ROOT, 'im')
         context['start'] = args.start
         context['end'] = args.end
-        review(context)
+        # review(context)
 
 
 if __name__ == "__main__":
