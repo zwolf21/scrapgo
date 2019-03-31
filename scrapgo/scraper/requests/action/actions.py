@@ -6,12 +6,12 @@ Location = namedtuple(
 )
 
 Link = namedtuple(
-    'Link', 'pattern filter parser name recursive refresh set_header'
+    'Link', 'pattern filter parser name recursive refresh set_header referer'
 )
 
 
 Source = namedtuple(
-    'Source', 'pattern, filter parser name recursive refresh set_header')
+    'Source', 'pattern, filter parser name recursive refresh set_header referer')
 
 
 def _set_header(location, previous, headers):
@@ -26,11 +26,11 @@ def location(url, filter=None, parser=None, name=None, recursive=False, refresh=
         name or url,
         recursive,
         refresh,
-        set_header or _set_header
+        set_header or _set_header,
     )
 
 
-def href(pattern, filter=None, parser=None, name=None, recursive=False, refresh=False, set_header=None):
+def href(pattern, filter=None, parser=None, name=None, recursive=False, refresh=False, set_header=None, referer=None):
     regx = re.compile(pattern)
     return Link(
         regx,
@@ -39,11 +39,12 @@ def href(pattern, filter=None, parser=None, name=None, recursive=False, refresh=
         name or pattern,
         recursive,
         refresh,
-        set_header=set_header or _set_header
+        set_header or _set_header,
+        referer
     )
 
 
-def src(pattern, filter=None, parser=None, name=None, refresh=False, set_header=None):
+def src(pattern, filter=None, parser=None, name=None, refresh=False, set_header=None, referer=None):
     regx = re.compile(pattern)
     return Source(
         regx,
@@ -52,5 +53,6 @@ def src(pattern, filter=None, parser=None, name=None, refresh=False, set_header=
         name or pattern,
         False,
         refresh,
-        set_header or _set_header
+        set_header or _set_header,
+        referer
     )

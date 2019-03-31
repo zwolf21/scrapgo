@@ -62,7 +62,8 @@ class LinkPatternScraper(LinkPatternContainerMixin, RequestsSoupCrawler):
             'parser': self._get_method(action.parser, 'parser'),
             'context': context,
             'recursive': action.recursive,
-            'refresh': action.refresh
+            'refresh': action.refresh,
+            'referer': self.find_referer(action, response)
         }
         next_responses = []
         for rsp, parsed in self._crawl(**kwargs):
@@ -89,6 +90,7 @@ class LinkPatternScraper(LinkPatternContainerMixin, RequestsSoupCrawler):
             self._handle_location,
             self._handle_link,
             self._handle_link,
-            self.context
+            self.context,
+            until
         )
         return results

@@ -28,7 +28,7 @@ class RequestsSoupCrawler(SoupParserMixin, CachedRequests):
             setattr(r, 'referer', self.ROOT_URL)
         return r
 
-    def _crawl(self, response, pattern, filter, parser, set_header, context, recursive, refresh):
+    def _crawl(self, response, pattern, filter, parser, set_header, context, recursive, refresh, referer):
         linkstack = SetStack([response])
         visited = set()
         first = True
@@ -49,6 +49,8 @@ class RequestsSoupCrawler(SoupParserMixin, CachedRequests):
                         location = abs_path(self.ROOT_URL, link)
                         headers = set_header(
                             location, previous, self.get_header())
+                        if referer is not None:
+                            headers['Referer'] = referer
                         rsp = self.get(link, headers=headers,
                                        refresh=refresh, previous=response)
                         src = parse_src(link)
