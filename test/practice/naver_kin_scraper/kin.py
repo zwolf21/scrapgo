@@ -27,7 +27,7 @@ class NaverKinScraper(LinkPatternScraper):
             r'^https://kin-phinf.pstatic.net/(?P<date>.+)/.+/(?P<filename>.+)\?type=(?P<type>.+)$',
             parser='result_img_parser',
             name='image'
-        )
+        ),
 
     ]
 

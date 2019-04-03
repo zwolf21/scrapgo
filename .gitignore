@@ -15,3 +15,4 @@ pip-selfcheck.json
 /*.egg-info
 /media
 im/
+/test

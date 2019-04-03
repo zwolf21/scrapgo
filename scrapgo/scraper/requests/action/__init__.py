@@ -1,2 +1,2 @@
 from .actions import *
-from .container import LinkPatternContainerMixin
+from .container import *

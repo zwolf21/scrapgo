@@ -14,6 +14,9 @@ CACHE_EXPIRATION = timedelta(days=100)
 # SoupParser
 BEAUTIFULSOUP_PARSER = 'html.parser'
 SCRAP_TARGET_ATTRS = 'href', 'src',
+PARSE_CONTENT_TYPES = [
+    'text/css', 'text/html', 'text/javascript', 'text/plain', 'text/xml'
+]
 
 # pattern context field names
 URLPATTERN_DISPATCHER = 'urlpattern'

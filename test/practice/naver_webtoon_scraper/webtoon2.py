@@ -1,149 +1,164 @@
+import pandas as pd
 import os
 import re
+import json
 from io import BytesIO
 from collections import namedtuple, OrderedDict
 
-from scrapgo.scraper import LinkPatternScraper, href, location, src
-from scrapgo.utils.shortcuts import mkdir_p, cp
+from scrapgo.scraper import LinkRelayScraper, url, urlpattern, urltemplate
+from scrapgo.utils.shortcuts import mkdir_p, cp, parse_query, queryjoin, parse_root
 
 
-class NaverWebToonScraper(LinkPatternScraper):
+COMMENT_PAGE_SIZE = 100
+
+
+class NaverWebToonScraper(LinkRelayScraper):
     ROOT_URL = 'https://comic.naver.com/webtoon/weekday.nhn'
-    REQUEST_DELAY = 0.1
-    # CACHE_BACKEND = 'memory'
-
-    LINK_PATTERNS = [
-        location(
+    REQUEST_DELAY = 0
+    LINK_RELAY = [
+        url(
             '/',
-            filter='root_filter',
+            as_root=True,
             parser='root_parser',
             refresh=True,
             name='root'
         ),
-        href(
-            r'^/webtoon/list.nhn\?titleId=(?P<titleId>\d+)&weekday=(?P<weekday>.+)$',
+        urlpattern(
+            r'^/webtoon/list.nhn\?titleId=(?P<titleId>\d+)&weekday=(?P<weekday>\w+)$',
             parser='toon_parser',
             refresh=True,
             name='toon',
         ),
-        src(  # 이미지, 파일등 과같은 source 항목을 다운로드 필터링등 처리할 수 있다
-            r'^https://shared-comic.pstatic.net/thumb/webtoon/(?P<titleId>\d+)/thumbnail/(?P<filename>.+)$',
-            name='toon_thumb',
-            parser='toon_thumb_parser',
-            referer='toon'  # 위에서 방문하였던 패턴의 주소를 request header 에 referer로 셋팅 할 수 있다
-        ),
-        href(
+        # urlpattern(  # 이미지, 파일등 과같은 source 항목을 다운로드 필터링등 처리할 수 있다
+        #     r'^https://shared-comic.pstatic.net/thumb/webtoon/(?P<titleId>\d+)/thumbnail/(?P<filename>.+)$',
+        #     name='toon_thumb',
+        #     parser='toon_thumb_parser',
+        # ),
+        urlpattern(
             r'^/webtoon/list.nhn\?titleId=(?P<titleId>\d+)&weekday=(?P<weekday>\w*)&page=(?P<page>\d+)$',
-            recursive=True,  # 페이지 네이션 패턴을 재귀적으로 방문하여 모든 페이지에 방문함, 물론 필터링지정하면 필터링도 가능
             name='toon_page',
             parser='episode_pagination_parser',
-            refresh=True
+            refresh=True,
+            recursive=True  # 페이지 네이션 패턴을 재귀적으로 방문하여 모든 페이지에 방문함, 물론 필터링지정하면 필터링도 가능
         ),
-        src(
-            r'^https://shared-comic.pstatic.net/thumb/webtoon/(?P<titleId>\d+)/(?P<no>\d+)/(?P<filename>.+)$',
-            parser='episode_thumb_parser',
-            name='episode_thumb',
-            set_header='episode_cut_set_header',
-            referer='toon_page'
-        ),
-        href(
+        # urlpattern(
+        #     r'^https://shared-comic.pstatic.net/thumb/webtoon/(?P<titleId>\d+)/(?P<no>\d+)/(?P<filename>.+)$',
+        #     parser='episode_thumb_parser',
+        #     name='episode_thumb',
+        # ),
+        urlpattern(
             r'^/webtoon/detail.nhn\?titleId=(?P<titleId>\d+)&no=(?P<no>\d+)&weekday=(?P<weekday>\w*)$',
             parser='episode_parser',
-            name='episode'
+            name='episode',
         ),
-        src(
-            r'^https://image-comic.pstatic.net/webtoon/(?P<titleId>\d+)/(?P<no>\d+)/(?P<filename>.+)$',
-            parser='episode_cut_parser',
-            name='episode_cut',
-            set_header='episode_cut_set_header',
-            referer='episode'
+        # urlpattern(
+        #     r'^https://image-comic.pstatic.net/webtoon/(?P<titleId>\d+)/(?P<no>\d+)/(?P<filename>.+)$',
+        #     parser='episode_cut_parser',
+        #     name='episode_cut',
+        #     referer='episode',
+        # ),
+        url(
+            'https://apis.naver.com/commentBox/cbox/web_naver_list_jsonp.json',
+            set_params='comment_page_counter_set_params',
+            name='comment_page_counter',
+            parser='get_comment_page_count',
+            referer='episode',
+            # refresh=True,
+        ),
+        url(
+            'https://apis.naver.com/commentBox/cbox/web_naver_list_jsonp.json',
+            set_params='comment_set_params',
+            name='comment',
+            parser='comment_parser',
+            referer='episode',
+            # refresh=True,
         )
     ]
 
-    def main_filter(self, link, query, match, context):
+    def main_filter(self, link, query, match, context=None):
         if not match:
             return True
-
         titleId = context.get('titleId')
-        if titleId:
-            if titleId == match('titleId'):
-                return True
+        return titleId and titleId == match('titleId')
 
-    def root_parser(self, response, match, soup, context):
-        save_to = context['save_to']
-        mkdir_p(save_to)
-        context[response.url] = save_to
+    def root_parser(self, response, match, soup, context=None):
+        print('root_parser:', response.url)
 
-    def toon_parser(self, response, match, soup, context):
-        titlebar = soup.title.text.split('::')
-        title = titlebar[0].strip()
-        titleId = match('titleId')
-        weekday = match('weekday')
-        author = soup.select('span.wrt_nm')[0].text.strip()
+    def toon_parser(self, response, match, soup, context=None):
+        print('toon_parser', response.url)
+        pass
 
-        toon_path = os.path.join(context[response.referer], title)
-        mkdir_p(toon_path)
-        context[response.url] = toon_path
+    def toon_thumb_parser(self, response, match, soup, context=None):
+        # print('toon_thumb_parser:', response.url)
+        pass
 
-        return {
-            'toon_title': title,
-            'author': author,
-            'titleId': titleId,
-            'weekday': weekday,
-        }
+    def episode_pagination_parser(self, response, match, soup, context=None):
+        # print('episode_pagination_parser:', response.url)
+        pass
 
-    def toon_thumb_parser(self, response, match, soup, context):
-        # print('toon_thumb_parser', response.request.headers)
+    def episode_parser(self, response, match, soup, context=None):
+        # context['titleId'] = match('no')
+        pass
 
-        toon_path = context[response.referer]
-        path = os.path.join(toon_path, match('filename'))
-        cp(path, response.content)
+    def episode_thumb_parser(self, response, match, soup, context=None):
+        pass
 
-    def episode_pagination_parser(self, response, match, soup, context):
-        context[response.url] = context[response.referer]
+    def episode_cut_parser(self, response, match, soup, context=None):
+        print(response.request.headers['Referer'])
+        pass
 
-    def episode_thumb_parser(self, response, match, soup, context):
-        # print('episode_thumb_parser', response.request.headers)
-        episode_path = context[response.referer]
-        EpThumb = namedtuple('EpThumb', 'titleId no filename content')
-        thumb = EpThumb(
-            match('titleId'), match('no'), match('filename'), response.content
+    def comment_page_counter_set_params(self, referer_response, url, root_params, context):
+        params = self._get_comment_params(referer_response.url, page=1)
+        yield queryjoin(url, params)
+
+    def _parse_comment_jsonp(self, response):
+        jsonp = response.text
+        js = jsonp[jsonp.index("(") + 1: jsonp.rindex(")")]
+        return json.loads(js)
+
+    def _get_comment_params(self, referer_response_url, page):
+        query = parse_query(referer_response_url)
+        params = dict(
+            ticket='comic',
+            templateId='webtoon',
+            pool='cbox3',
+            _callback='jQuery112406101924163625125_1554234985140',
+            lang='ko',
+            country='KR',
+            objectId='{titleId}_{no}'.format(**query),
+            pageSize=COMMENT_PAGE_SIZE,
+            indexSize=10,
+            listType='OBJECT',
+            pageType='default',
+            page=page,
+            refresh='false',
+            sort='NEW',
         )
-        context.setdefault('episode_thumb', []).append(thumb)
+        return params
 
-    def episode_parser(self, response, match, soup, context):
-        episode_titles = soup.select('div.tit_area > .view > h3')
-        episode_title = episode_titles[0].text.strip()
-        episode_no = match('no')
-        titleId = match('titleId')
-        toon_path = context[response.referer]
-        episode_path = os.path.join(toon_path, episode_title)
-        mkdir_p(episode_path)
-        context[response.url] = episode_path
+    def get_comment_page_count(self, response, match, soup, context=None):
+        comment = self._parse_comment_jsonp(response)
+        pageSize = comment['result']['pageModel']['pageSize']
+        totalCount = comment['result']['count']['total']
+        context[response.referer] = {'page_count': totalCount//pageSize + 1}
 
-        return {
-            'titleId': titleId,
-            'no': episode_no,
-            'episode_title': episode_title,
-        }
+    def comment_set_params(self, referer_response, url, root_params, context):
+        page_count = context[referer_response.url]['page_count']
+        print('comment_set_params:', page_count)
+        for page in range(1, page_count+1):
+            params = self._get_comment_params(referer_response.url, page)
+            yield queryjoin(url, params)
 
-    def episode_cut_parser(self, response, match, soup, context):
-        episode_path = context[response.referer]
-        path = os.path.join(episode_path, match('filename'))
-        cp(path, response.content)
-
-        # print('episode_cut_parser', response.request.headers)
-        titleId = match('titleId')
-        no = match('no')
-        episode_thumb = None
-        for thumb in context['episode_thumb']:
-            if thumb.titleId == titleId and thumb.no == no:
-                episode_thumb = thumb
-        if episode_thumb is not None:
-            thumb_path = os.path.join(episode_path, episode_thumb.filename)
-            cp(thumb_path, episode_thumb.content)
+    def comment_parser(self, response, *args, **kwargs):
+        comment = self._parse_comment_jsonp(response)
+        comments = comment['result']['commentList']
+        return comments
 
 
 def retrive_webtoon(context):
-    n = NaverWebToonScraper(context=context)
-    return n.scrap()
+    comment_save_to = os.path.join(context['save_to'], 'comment.csv')
+    n = NaverWebToonScraper()
+    r = n.scrap(context=context)
+    comments = r['comment']
+    df = pd.DataFrame(comments)
+    df.to_csv(comment_save_to)

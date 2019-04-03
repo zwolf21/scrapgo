@@ -1,78 +1,15 @@
 from collections import abc
 
-from scrapgo.utils.shortcuts import parse_query
+from scrapgo.utils.shortcuts import parse_query, parse_path
 from scrapgo.modules import CachedRequests, SoupParserMixin
 from .crawler import RequestsSoupCrawler
 from .action import *
 
 
-class LinkPatternScraper(LinkPatternContainerMixin, RequestsSoupCrawler):
+class LinkRelayScraper(ActionContainer, RequestsSoupCrawler):
 
-    def __init__(self, context=None, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.context = context or {}
-
-    def _get_method(self, func, kind):
-        if callable(func):
-            return func
-        if isinstance(func, str):
-            if hasattr(self, func):
-                return getattr(self, func)
-
-        return {
-            'filter': self.main_filter,
-            'parser': self.default_parser,
-            'set_header': self.set_headers,
-        }[kind]
-
-    def default_parser(self, response, match, soup, context=None):
-        return
-
-    def main_filter(self, link, query, match, context=None):
-        return True
-
-    def set_headers(self, location, previous, headers):
-        return headers
-
-    def _handle_location(self, action, context, results):
-        parser = self._get_method(action.parser, 'parser')
-        filter = self._get_method(action.filter, 'filter')
-        set_header = self._get_method(action.set_header, 'set_header')
-        url = self.ROOT_URL if action.url == '/' else action.url
-        headers = set_header(url, url, self.get_header())
-        query = parse_query(url)
-        match = None
-        if not self.main_filter(url, query, match, context=context):
-            return []
-
-        if not filter(url, query, match, context=context):
-            return []
-        response = self.get(url, headers=headers, refresh=action.refresh)
-        soup = self._get_soup(response.content)
-        parsed = parser(response, query, soup, context=context)
-        self.reducer(parsed, action.name, results)
-        return [response]
-
-    def _handle_link(self, action, response, context, results):
-        kwargs = {
-            'response': response,
-            'pattern': action.pattern,
-            'filter': self._get_method(action.filter, 'filter'),
-            'set_header': self._get_method(action.set_header, 'set_header'),
-            'parser': self._get_method(action.parser, 'parser'),
-            'context': context,
-            'recursive': action.recursive,
-            'refresh': action.refresh,
-            'referer': self.find_referer(action, response)
-        }
-        next_responses = []
-        for rsp, parsed in self._crawl(**kwargs):
-            next_responses.append(rsp)
-            self.reducer(parsed, action.name, results)
-        if isinstance(action, Source):
-            return [response]
-        else:
-            return next_responses
 
     def reducer(self, parsed, name, results):
         if parsed is None:
@@ -84,13 +21,72 @@ class LinkPatternScraper(LinkPatternContainerMixin, RequestsSoupCrawler):
         elif isinstance(parsed, abc.Iterable):
             results[name].extend(list(parsed))
 
-    def scrap(self, until=None):
-        results = self._relay_patterns(
-            self.get(self.ROOT_URL),
-            self._handle_location,
-            self._handle_link,
-            self._handle_link,
-            self.context,
-            until
+    def scrap(self, root_params=None, context=None):
+        self.context = context or {}
+        self.root_params = root_params
+        return self._relay_actions(
+            self._handle_actions,
+            context
         )
-        return results
+
+    def _handle_actions(self, action, response, context, results):
+        if response is None:
+            response = self.get(self.ROOT_URL)
+        kwargs = {
+            'response': response,
+            'context': context,
+            'filter': action.filter,
+            'parser': action.parser,
+            'refresh': action.refresh,
+            'referer': self.find_referer(action, response)
+        }
+        if isinstance(action, (Root, Url)):
+            if action.url == '/':
+                action.url = self.ROOT_URL
+            url = action.set_params(
+                response, action.url, self.root_params, context)
+            if isinstance(url, str):
+                patterns = [url]
+            else:
+                patterns = list(url)
+        elif isinstance(action, RegexUrl):
+            patterns = [action.regex]
+            kwargs['recursive'] = action.recursive
+        elif isinstance(action, FormatUrl):
+            patterns = action.formater(action.template, context=context)
+            if isinstance(patterns, str):
+                patterns = [patterns]
+        else:
+            patterns = [action.url]
+
+        next_responses = []
+        for pattern in patterns:
+            kwargs['pattern'] = pattern
+            for rsp, parsed in self._crawl(**kwargs):
+                if not self._is_parsable(rsp):
+                    action.static = True
+                next_responses.append(rsp)
+                self.reducer(parsed, action.name, results)
+
+        if action.static == True:
+            return [response]
+        return next_responses
+
+    def find_referer(self, action, response):
+        if response is None:
+            return self.ROOT_URL
+        if not action.referer or not hasattr(response, 'trace'):
+            return
+        action_name = action.referer
+        tracer = response.trace
+        actions = self.get_action(action_name, many=True)
+        for action in actions:
+            for url in tracer:
+                link = parse_path(url)
+                if isinstance(action, (Url, Root)):
+                    if action.url in [url, link]:
+                        return url
+                else:
+                    p = action.regex
+                    if p.match(url) or p.match(link):
+                        return url

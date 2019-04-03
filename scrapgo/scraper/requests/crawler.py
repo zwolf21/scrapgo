@@ -28,7 +28,7 @@ class RequestsSoupCrawler(SoupParserMixin, CachedRequests):
             setattr(r, 'referer', self.ROOT_URL)
         return r
 
-    def _crawl(self, response, pattern, filter, parser, set_header, context, recursive, refresh, referer):
+    def _crawl(self, response, pattern, filter, parser, context=None, recursive=False, refresh=False, referer=None):
         linkstack = SetStack([response])
         visited = set()
         first = True
@@ -41,24 +41,21 @@ class RequestsSoupCrawler(SoupParserMixin, CachedRequests):
             for link in self._parse_link(response, pattern):
                 if link not in visited:
                     visited.add(link)
-                    match = pattern.match(link).group
+                    if isinstance(pattern, re.Pattern):
+                        match = pattern.match(link).group
+                    else:
+                        match = None
                     query = parse_query(link)
                     if not self.main_filter(link, query, match, context=context):
                         continue
                     if filter(link, query, match, context=context):
                         location = abs_path(self.ROOT_URL, link)
-                        headers = set_header(
-                            location, previous, self.get_header())
+                        headers = self.get_header()
                         if referer is not None:
                             headers['Referer'] = referer
                         rsp = self.get(link, headers=headers,
                                        refresh=refresh, previous=response)
-                        src = parse_src(link)
-                        content_type = mimetypes.guess_type(src)[0]
-                        if content_type and 'image' in content_type:
-                            soup = rsp.content
-                        else:
-                            soup = self._get_soup(rsp.content)
-                        if recursive:
+                        soup = self._get_soup(rsp)
+                        if recursive and soup is not None:
                             linkstack.push(rsp)
                         yield rsp, parser(rsp, match, soup, context=context)

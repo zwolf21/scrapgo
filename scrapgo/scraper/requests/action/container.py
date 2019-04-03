@@ -1,47 +1,78 @@
 import re
 from collections import defaultdict
 
-from scrapgo.utils.shortcuts import parse_path
+from scrapgo.utils.shortcuts import parse_path, queryjoin
 from .actions import *
 
 
-class LinkPatternContainerMixin(object):
-    LINK_PATTERNS = None
+class ActionContainer(object):
+    LINK_RELAY = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _relay_patterns(self, seed, handle_location, handle_link, handle_source, context, until):
+        if not isinstance(self.LINK_RELAY[0], Root):
+            self.LINK_RELAY.insert(0, url(self.ROOT_URL, as_root=True))
+
+        for index, action in enumerate(self.LINK_RELAY):
+            if isinstance(action, (Root, Url)):
+                if hasattr(self, 'ROOT_URL') and self.ROOT_URL is None:
+                    self.ROOT_URL = action.url
+                action.set_params = self._get_method(
+                    action.set_params, 'set_params'
+                )
+            if isinstance(action, FormatUrl):
+                action.formater = self._get_method(action.formater, 'formater')
+
+            action.parser = self._get_method(action.parser, 'parser')
+            action.filter = self._get_method(action.filter, 'filter')
+
+    def _relay_actions(self, handle_actions, context):
         results = defaultdict(list)
         responses = []
 
-        for index, action in enumerate(self.LINK_PATTERNS):
-
-            if isinstance(action, Location):
-                responses += handle_location(action, context, results)
+        for action in self.LINK_RELAY:
+            if isinstance(action, Root):
+                responses += handle_actions(action, None, context, results)
                 continue
-
-            if index == 0:
-                responses.append(seed)
-
             next_responses = []
             for response in responses:
-                if isinstance(action, Link):
-                    next_responses += handle_link(
-                        action, response, context, results
-                    )
-                else:
-                    next_responses += handle_source(
-                        action, response, context, results
-                    )
+                next_responses += handle_actions(
+                    action, response, context, results
+                )
             responses = next_responses
-            if until is not None and action.name == until:
-                break
+
         return results
+
+    def _get_method(self, func, kind):
+        if callable(func):
+            return func
+        if isinstance(func, str):
+            if hasattr(self, func):
+                return getattr(self, func)
+
+        return {
+            'filter': self.main_filter,
+            'parser': self.default_parser,
+            'formater': self.url_formater,
+            'set_params': self.set_params
+        }[kind]
+
+    def default_parser(self, response, match, soup, context=None):
+        return
+
+    def main_filter(self, link, match, query, context=None):
+        return True
+
+    def url_formater(self, template, context=None):
+        return []
+
+    def set_params(self, response, url, params, context=None):
+        return queryjoin(url, params)
 
     def get_action(self, name, many=False):
         actions = []
-        for action in self.LINK_PATTERNS:
+        for action in self.LINK_RELAY:
             if action.name == name:
                 if many == False:
                     return action
@@ -50,20 +81,3 @@ class LinkPatternContainerMixin(object):
         if actions:
             return actions
         raise ValueError('InValid name: {}'.format(name))
-
-    def find_referer(self, action, response):
-        if not action.referer or not hasattr(response, 'trace'):
-            return
-        action_name = action.referer
-        tracer = response.trace
-        actions = self.get_action(action_name, many=True)
-        for action in actions:
-            for url in tracer:
-                link = parse_path(url)
-                if isinstance(action, Location):
-                    if action.url in [url, link]:
-                        return url
-                else:
-                    p = action.pattern
-                    if p.match(url) or p.match(link):
-                        return url
