@@ -1,8 +1,6 @@
 import os
 from urllib.parse import urlparse, urlunparse, parse_qsl, parse_qs, urljoin
 
-from requests import Request, Session
-
 
 def abs_path(root, url):
     # print('abs_path:root', root)
@@ -19,6 +17,7 @@ def parse_path(url):
 def parse_root(url):
     p = urlparse(url)
     args = p.scheme, p.netloc, '', '', '', ''
+    return urlunparse(args)
 
 
 def parse_query(url, qsl=True):
@@ -35,4 +34,23 @@ def parse_src(url):
 def queryjoin(url, params=None):
     r = Request('GET', url, params=params)
     s = Session()
-    return s.prepare_request(r).url
+    url = s.prepare_request(r).url
+    s.close()
+    return url
+
+
+def queryjoin(url, query=None):
+    if query is None:
+        return url
+    qsl = ['{}={}'.format(qry, val) for qry, val in query.items()]
+    qs = '&'.join(qsl)
+    p = urlparse(url)
+    args = p.scheme, p.netloc, p.path, p.params, qs, p.fragment
+    return urlunparse(args)
+
+
+def filter_params(url, fields):
+    p = urlparse(url)
+    query = parse_query(url)
+    qry = {q: v for q, v in query.items() if q in fields}
+    return queryjoin(url, qry)

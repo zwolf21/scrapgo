@@ -1,7 +1,7 @@
 import re
 import mimetypes
 
-from scrapgo.utils.urlparser import queryjoin, parse_src, parse_query
+from scrapgo.utils.urlparser import queryjoin, parse_src, parse_query, filter_params
 from scrapgo.lib.data_structure import SetStack
 from scrapgo.utils.shortcuts import abs_path
 from scrapgo.modules import CachedRequests, SoupParserMixin
@@ -14,8 +14,10 @@ class RequestsSoupCrawler(SoupParserMixin, CachedRequests):
         super().__init__(**kwargs)
         self.ROOT_URL = queryjoin(url or self.ROOT_URL, params)
 
-    def get(self, link, refresh=False, previous=None, **kwargs):
+    def get(self, link, refresh=False, previous=None, fields=None, **kwargs):
         url = abs_path(self.ROOT_URL, link)
+        if fields is not None:
+            url = filter_params(url, fields)
         r = self._get(url, refresh=refresh, **kwargs)
         # trace, referer 설치
         if previous:
@@ -28,7 +30,7 @@ class RequestsSoupCrawler(SoupParserMixin, CachedRequests):
             setattr(r, 'referer', self.ROOT_URL)
         return r
 
-    def _crawl(self, response, pattern, filter, parser, context=None, recursive=False, refresh=False, referer=None):
+    def _crawl(self, response, pattern, filter, parser, context=None, recursive=False, refresh=False, referer=None, fields=None):
         linkstack = SetStack([response])
         visited = set()
         first = True
@@ -53,8 +55,13 @@ class RequestsSoupCrawler(SoupParserMixin, CachedRequests):
                         headers = self.get_header()
                         if referer is not None:
                             headers['Referer'] = referer
-                        rsp = self.get(link, headers=headers,
-                                       refresh=refresh, previous=response)
+                        rsp = self.get(
+                            link,
+                            headers=headers,
+                            refresh=refresh,
+                            previous=response,
+                            fields=fields
+                        )
                         soup = self._get_soup(rsp)
                         if recursive and soup is not None:
                             linkstack.push(rsp)

@@ -4,9 +4,10 @@ from collections import namedtuple
 
 class BaseAction(object):
 
-    def __init__(self, name=None, filter=None, parser=None, static=False, refresh=False, referer=None):
+    def __init__(self, name=None, fields=None, filter=None, parser=None, static=False, refresh=False, referer=None):
         self.name = name
         self.filter = filter
+        self.fields = fields
         self.parser = parser
         self.static = static
         self.refresh = refresh
@@ -42,11 +43,12 @@ class FormatUrl(BaseAction):
         self.formater = formater
 
 
-def url(url, set_params=None, name=None, filter=None, parser=None, refresh=False, relay=True, as_root=False, referer=None):
+def url(url, fields=None, set_params=None, name=None, filter=None, parser=None, refresh=False, relay=True, as_root=False, referer=None):
     if as_root:
         return Root(
             url,
             name=name,
+            fields=fields,
             set_params=set_params,
             filter=filter,
             parser=parser,
@@ -58,6 +60,7 @@ def url(url, set_params=None, name=None, filter=None, parser=None, refresh=False
         return Url(
             url,
             name=name,
+            fields=fields,
             set_params=set_params,
             filter=filter,
             parser=parser,
@@ -67,10 +70,11 @@ def url(url, set_params=None, name=None, filter=None, parser=None, refresh=False
         )
 
 
-def urlpattern(regx, name=None, filter=None, parser=None, recursive=False, refresh=False, relay=True, referer=None):
+def urlpattern(regx, fields=None, name=None, filter=None, parser=None, recursive=False, refresh=False, relay=True, referer=None):
     return RegexUrl(
         regx,
         name=name,
+        fields=fields,
         filter=filter,
         parser=parser,
         recursive=recursive,
@@ -80,10 +84,11 @@ def urlpattern(regx, name=None, filter=None, parser=None, recursive=False, refre
     )
 
 
-def urltemplate(template, renderer, name=None, filter=None, parser=None, refresh=False, relay=True, referer=None):
+def urltemplate(template, renderer, fields=None, name=None, filter=None, parser=None, refresh=False, relay=True, referer=None):
     return FormatUrl(
         template,
         renderer,
+        fields=fields,
         name=name,
         filter=filter,
         parser=parser,

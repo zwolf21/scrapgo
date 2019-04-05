@@ -6,6 +6,7 @@ from requests_cache.backends.base import BaseCache
 from fake_useragent import FakeUserAgent
 
 from scrapgo import settings
+from scrapgo.lib.time.time import get_random_second
 
 
 class CachedRequests(object):
@@ -38,14 +39,23 @@ class CachedRequests(object):
         r = self.requests.get(url, headers=headers, **kwargs)
         r.raise_for_status()
 
-        print('get {} from_cache = {}'.format(url, r.from_cache))
         if r.from_cache == False:
-            time.sleep(self.REQUEST_DELAY)
+            delay = self._get_delay()
+            time.sleep(delay)
+            print('get {} from_cache: {} (delay:{}s)'.format(
+                url, r.from_cache, delay))
+        else:
+            print('get {} from_cache: {}'.format(url, r.from_cache))
 
         if not r.content:
             self.requests.cache.delete_url(url)
             print('Warning: {} has no content!'.format(r.url))
         return r
+
+    def _get_delay(self):
+        if isinstance(self.REQUEST_DELAY, (tuple, list,)) and len(self.REQUEST_DELAY) == 2:
+            return get_random_second(*self.REQUEST_DELAY)
+        return self.REQUEST_DELAY
 
     def _post(self, url, headers=None, data=None, **kwargs):
         headers = headers or self.headers

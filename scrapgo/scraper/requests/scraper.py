@@ -21,24 +21,27 @@ class LinkRelayScraper(ActionContainer, RequestsSoupCrawler):
         elif isinstance(parsed, abc.Iterable):
             results[name].extend(list(parsed))
 
-    def scrap(self, root_params=None, context=None):
+    def scrap(self, root_params=None, context=None, until=None):
         self.context = context or {}
         self.root_params = root_params
         return self._relay_actions(
             self._handle_actions,
-            context
+            context,
+            until
         )
 
     def _handle_actions(self, action, response, context, results):
         if response is None:
             response = self.get(self.ROOT_URL)
+
         kwargs = {
             'response': response,
             'context': context,
             'filter': action.filter,
             'parser': action.parser,
             'refresh': action.refresh,
-            'referer': self.find_referer(action, response)
+            'referer': self.find_referer(action, response),
+            'fields': action.fields
         }
         if isinstance(action, (Root, Url)):
             if action.url == '/':

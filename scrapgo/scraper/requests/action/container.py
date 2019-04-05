@@ -27,7 +27,7 @@ class ActionContainer(object):
             action.parser = self._get_method(action.parser, 'parser')
             action.filter = self._get_method(action.filter, 'filter')
 
-    def _relay_actions(self, handle_actions, context):
+    def _relay_actions(self, handle_actions, context, until=None):
         results = defaultdict(list)
         responses = []
 
@@ -41,7 +41,8 @@ class ActionContainer(object):
                     action, response, context, results
                 )
             responses = next_responses
-
+            if until is not None and action.name == until:
+                break
         return results
 
     def _get_method(self, func, kind):
