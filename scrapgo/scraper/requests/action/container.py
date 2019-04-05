@@ -12,7 +12,8 @@ class ActionContainer(object):
         super().__init__(*args, **kwargs)
 
         if not isinstance(self.LINK_RELAY[0], Root):
-            self.LINK_RELAY.insert(0, url(self.ROOT_URL, as_root=True))
+            self.LINK_RELAY.insert(
+                0, url(self.ROOT_URL, as_root=True, refresh=True))
 
         for index, action in enumerate(self.LINK_RELAY):
             if isinstance(action, (Root, Url)):
