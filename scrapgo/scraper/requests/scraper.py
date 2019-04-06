@@ -1,6 +1,6 @@
 from collections import abc
 
-from scrapgo.utils.shortcuts import parse_query, parse_path
+from scrapgo.utils.shortcuts import parse_query, parse_path, filter_params
 from scrapgo.modules import CachedRequests, SoupParserMixin
 from .crawler import RequestsSoupCrawler
 from .action import *
@@ -83,13 +83,22 @@ class LinkRelayScraper(ActionContainer, RequestsSoupCrawler):
         action_name = action.referer
         tracer = response.trace
         actions = self.get_action(action_name, many=True)
+        ret = None
         for action in actions:
             for url in tracer:
                 link = parse_path(url)
                 if isinstance(action, (Url, Root)):
                     if action.url in [url, link]:
-                        return url
+                        ret = url
                 else:
                     p = action.regex
+                    # action 에 fileds 속성 추가로 버그 발생 소지
                     if p.match(url) or p.match(link):
-                        return url
+                        # print('find_referer:', p)
+                        # print('find_referer:', link)
+                        # print('find_referer:', response.fields)
+                        ret = url
+        if ret:
+            referer = filter_params(ret, response.fields)
+            # print('find_referer:referer', referer)
+            return referer

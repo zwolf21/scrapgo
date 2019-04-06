@@ -1,7 +1,9 @@
 import re
 from collections import defaultdict
+from itertools import takewhile
 
 from scrapgo.utils.shortcuts import parse_path, queryjoin
+from scrapgo.lib.data_structure.setstack import SetStack
 from .actions import *
 
 
@@ -45,6 +47,27 @@ class ActionContainer(object):
             if until is not None and action.name == until:
                 break
         return results
+
+    # def _relay_actions(self, handle_actions, context, until=None):
+    #     results = defaultdict(list)
+
+    #     argstack = SetStack()
+    #     seed = self.LINK_RELAY[0], None
+    #     argstack.push(seed)
+
+    #     link_relay = self.LINK_RELAY[1:]
+
+    #     if until:
+    #         link_relay = list(
+    #             takewhile(lambda action: action.name != until, link_relay))
+
+    #     while argstack:
+    #         action, response = argstack.pop()
+    #         next_responses = handle_actions(
+    #             action, response, context=context, results=results
+    #         )
+    #         for action in link_relay:
+    #             next_responses
 
     def _get_method(self, func, kind):
         if callable(func):

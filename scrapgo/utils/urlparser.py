@@ -50,6 +50,8 @@ def queryjoin(url, query=None):
 
 
 def filter_params(url, fields):
+    if fields is None:
+        return url
     p = urlparse(url)
     query = parse_query(url)
     qry = {q: v for q, v in query.items() if q in fields}

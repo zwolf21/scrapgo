@@ -16,15 +16,18 @@ class RequestsSoupCrawler(SoupParserMixin, CachedRequests):
 
     def get(self, link, refresh=False, previous=None, fields=None, **kwargs):
         url = abs_path(self.ROOT_URL, link)
-        if fields is not None:
+        raw_url = url  # 사이트에서 사용중인 가공되지 않은 url
+        if fields is not None:  # url 가공
             url = filter_params(url, fields)
         r = self._get(url, refresh=refresh, **kwargs)
+        setattr(r, 'raw_url', raw_url)
+        setattr(r, 'fields', fields)
         # trace, referer 설치
         if previous:
             setattr(r, 'referer', previous.url)
             if not hasattr(previous, 'trace'):
                 setattr(previous, 'trace', [self.ROOT_URL])
-            setattr(r, 'trace', [url])
+            setattr(r, 'trace', [raw_url])
             r.trace += previous.trace
         else:
             setattr(r, 'referer', self.ROOT_URL)
@@ -54,6 +57,7 @@ class RequestsSoupCrawler(SoupParserMixin, CachedRequests):
                         location = abs_path(self.ROOT_URL, link)
                         headers = self.get_header()
                         if referer is not None:
+                            # print('_crawl:referer', referer)
                             headers['Referer'] = referer
                         rsp = self.get(
                             link,
