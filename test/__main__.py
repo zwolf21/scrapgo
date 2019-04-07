@@ -1,5 +1,5 @@
 from practice.im.im_review_scraper import review
-# from practice.naver_kin_scraper.kin import naver_kin_with_image
+from practice.naver_kin_scraper.kin import naver_kin_with_image
 import argparse
 from practice.naver_webtoon_scraper.webtoon2 import retrive_webtoon
 import os
