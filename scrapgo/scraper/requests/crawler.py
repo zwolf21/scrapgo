@@ -24,13 +24,13 @@ class RequestsSoupCrawler(SoupParserMixin, CachedRequests):
         setattr(r, 'fields', fields)
         # trace, referer 설치
         if previous:
-            setattr(r, 'referer', previous.url)
+            setattr(r, 'previous', previous.url)
             if not hasattr(previous, 'trace'):
                 setattr(previous, 'trace', [self.ROOT_URL])
             setattr(r, 'trace', [raw_url])
             r.trace += previous.trace
         else:
-            setattr(r, 'referer', self.ROOT_URL)
+            setattr(r, 'previous', self.ROOT_URL)
         return r
 
     def _crawl(self, response, pattern, filter, parser, context=None, recursive=False, refresh=False, referer=None, fields=None):
@@ -57,7 +57,6 @@ class RequestsSoupCrawler(SoupParserMixin, CachedRequests):
                         location = abs_path(self.ROOT_URL, link)
                         headers = self.get_header()
                         if referer is not None:
-                            # print('_crawl:referer', referer)
                             headers['Referer'] = referer
                         rsp = self.get(
                             link,

@@ -48,27 +48,6 @@ class ActionContainer(object):
                 break
         return results
 
-    # def _relay_actions(self, handle_actions, context, until=None):
-    #     results = defaultdict(list)
-
-    #     argstack = SetStack()
-    #     seed = self.LINK_RELAY[0], None
-    #     argstack.push(seed)
-
-    #     link_relay = self.LINK_RELAY[1:]
-
-    #     if until:
-    #         link_relay = list(
-    #             takewhile(lambda action: action.name != until, link_relay))
-
-    #     while argstack:
-    #         action, response = argstack.pop()
-    #         next_responses = handle_actions(
-    #             action, response, context=context, results=results
-    #         )
-    #         for action in link_relay:
-    #             next_responses
-
     def _get_method(self, func, kind):
         if callable(func):
             return func
@@ -105,4 +84,4 @@ class ActionContainer(object):
                     actions.append(action)
         if actions:
             return actions
-        raise ValueError('InValid name: {}'.format(name))
+        raise ValueError('Invalid name: {}'.format(name))

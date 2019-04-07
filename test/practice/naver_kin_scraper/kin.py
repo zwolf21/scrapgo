@@ -25,7 +25,8 @@ class NaverKinScraper(LinkRelayScraper):
         urlpattern(
             r'^https://kin-phinf.pstatic.net/(?P<date>.+)/.+/(?P<filename>.+)\?type=(?P<type>.+)$',
             parser='img_parser',
-            name='image'
+            name='image',
+            referer='detail'
         )
     ]
 

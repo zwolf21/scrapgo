@@ -92,13 +92,8 @@ class LinkRelayScraper(ActionContainer, RequestsSoupCrawler):
                         ret = url
                 else:
                     p = action.regex
-                    # action 에 fileds 속성 추가로 버그 발생 소지
                     if p.match(url) or p.match(link):
-                        # print('find_referer:', p)
-                        # print('find_referer:', link)
-                        # print('find_referer:', response.fields)
                         ret = url
         if ret:
             referer = filter_params(ret, response.fields)
-            # print('find_referer:referer', referer)
             return referer
