@@ -6,7 +6,7 @@ from io import BytesIO
 from collections import namedtuple, OrderedDict
 
 from scrapgo.scraper import LinkRelayScraper, url, urlpattern, urltemplate
-from scrapgo.utils.shortcuts import mkdir_p, cp, parse_query, queryjoin, parse_root
+from scrapgo.utils.shortcuts import mkdir_p, cp, parse_query, queryjoin, parse_root, parse_jsonp
 
 
 COMMENT_PAGE_SIZE = 100
@@ -111,11 +111,6 @@ class NaverWebToonScraper(LinkRelayScraper):
         params = self._get_comment_params(referer_response.url, page=1)
         yield queryjoin(url, params)
 
-    def _parse_comment_jsonp(self, response):
-        jsonp = response.text
-        js = jsonp[jsonp.index("(") + 1: jsonp.rindex(")")]
-        return json.loads(js)
-
     def _get_comment_params(self, referer_response_url, page):
         query = parse_query(referer_response_url)
         params = dict(
@@ -137,10 +132,10 @@ class NaverWebToonScraper(LinkRelayScraper):
         return params
 
     def get_comment_page_count(self, response, match, soup, context=None):
-        comment = self._parse_comment_jsonp(response)
+        comment = parse_jsonp(response.text)
         pageSize = comment['result']['pageModel']['pageSize']
         totalCount = comment['result']['count']['total']
-        context[response.referer] = {'page_count': totalCount//pageSize + 1}
+        context[response.previous] = {'page_count': totalCount//pageSize + 1}
 
     def comment_set_params(self, referer_response, url, root_params, context):
         page_count = context[referer_response.url]['page_count']
@@ -150,7 +145,7 @@ class NaverWebToonScraper(LinkRelayScraper):
             yield queryjoin(url, params)
 
     def comment_parser(self, response, *args, **kwargs):
-        comment = self._parse_comment_jsonp(response)
+        comment = parse_jsonp(response.text)
         comments = comment['result']['commentList']
         return comments
 
@@ -162,3 +157,8 @@ def retrive_webtoon(context):
     comments = r['comment']
     df = pd.DataFrame(comments)
     df.to_csv(comment_save_to)
+
+
+# context = {'titleId': 638845, 'save_to': 'media'}
+
+# retrive_webtoon(context)

@@ -2,7 +2,6 @@ import time
 
 import requests
 import requests_cache
-from requests_cache.backends.base import BaseCache
 from fake_useragent import FakeUserAgent
 
 from scrapgo import settings
@@ -16,6 +15,7 @@ class CachedRequests(object):
     CACHE_NAME = settings.CACHE_NAME
     CACHE_BACKEND = settings.CACHE_BACKEND
     CACHE_EXPIRATION = settings.CACHE_EXPIRATION
+    CACHE_METHODS = settings.CACHE_METHODS
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -28,7 +28,8 @@ class CachedRequests(object):
         self.requests = requests_cache.CachedSession(
             cache_name=self.CACHE_NAME,
             backend=self.CACHE_BACKEND,
-            expire_after=self.CACHE_EXPIRATION
+            expire_after=self.CACHE_EXPIRATION,
+            allowable_methods=self.CACHE_METHODS
         )
 
     def _get(self, url, headers=None, refresh=False, **kwargs):
@@ -52,14 +53,21 @@ class CachedRequests(object):
             print('Warning: {} has no content!'.format(r.url))
         return r
 
+    def _post(self, url, data, headers=None, refresh=True, **kwargs):
+        headers = headers or self.headers
+        if refresh:
+            if self.requests.cache.has_url(url):
+                print('Delete Cached:',  url)
+                self.requests.cache.delete_url(url)
+        r = self.requests.post(url, data=data, headers=headers, **kwargs)
+        print('post {}'.format(url))
+        r.raise_for_status()
+        return r
+
     def _get_delay(self):
         if isinstance(self.REQUEST_DELAY, (tuple, list,)) and len(self.REQUEST_DELAY) == 2:
             return get_random_second(*self.REQUEST_DELAY)
         return self.REQUEST_DELAY
-
-    def _post(self, url, headers=None, data=None, **kwargs):
-        headers = headers or self.headers
-        return self.requests.post(url, data=data, headers=headers, **kwargs)
 
     def get_header(self):
         return self.headers.copy()

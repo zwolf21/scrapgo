@@ -2,6 +2,7 @@ from practice.im.im_review_scraper import review
 from practice.naver_kin_scraper.kin import naver_kin_with_image
 import argparse
 from practice.naver_webtoon_scraper.webtoon2 import retrive_webtoon
+from practice.durginfo.druginfo_scraper import drug_search
 import os
 import sys
 
@@ -26,6 +27,7 @@ def main():
     args = argparser.parse_args()
     app = args.keywords[0]
 
+
     context = {
         'save_to': MEDIA_ROOT
     }
@@ -43,6 +45,12 @@ def main():
         context['start'] = args.start
         context['end'] = args.end
         review(context)
+
+    if app in ['druginfo']:
+        params = {
+            'q': args.search
+        }
+        drug_search(params)
 
 
 if __name__ == "__main__":

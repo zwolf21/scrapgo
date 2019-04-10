@@ -1,4 +1,5 @@
 from .urlparser import *
+import json
 
 
 def mkdir_p(path):
@@ -9,3 +10,8 @@ def mkdir_p(path):
 def cp(path, content):
     with open(path, 'wb') as fp:
         fp.write(content)
+
+
+def parse_jsonp(jsonp, **kwargs):
+    js = jsonp[jsonp.index("(") + 1: jsonp.rindex(")")]
+    return json.loads(js, **kwargs)

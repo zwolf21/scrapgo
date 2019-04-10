@@ -3,7 +3,6 @@ from collections import defaultdict
 from itertools import takewhile
 
 from scrapgo.utils.shortcuts import parse_path, queryjoin
-from scrapgo.lib.data_structure.setstack import SetStack
 from .actions import *
 
 

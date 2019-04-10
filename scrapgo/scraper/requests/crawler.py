@@ -1,8 +1,7 @@
 import re
-import mimetypes
+from collections import deque
 
 from scrapgo.utils.urlparser import queryjoin, parse_src, parse_query, filter_params
-from scrapgo.lib.data_structure import SetStack
 from scrapgo.utils.shortcuts import abs_path
 from scrapgo.modules import CachedRequests, SoupParserMixin
 
@@ -33,8 +32,15 @@ class RequestsSoupCrawler(SoupParserMixin, CachedRequests):
             setattr(r, 'previous', self.ROOT_URL)
         return r
 
+    def post(self, url, data, refresh=False, referer=None, **kwargs):
+        headers = self.get_header()
+        if referer is not None:
+            headers['Referer'] = referer
+        r = self._post(url, data, headers=headers, refresh=refresh, **kwargs)
+        return r
+
     def _crawl(self, response, pattern, filter, parser, context=None, recursive=False, refresh=False, referer=None, fields=None):
-        linkstack = SetStack([response])
+        linkstack = deque([response])
         visited = set()
         first = True
         while linkstack:
@@ -67,5 +73,5 @@ class RequestsSoupCrawler(SoupParserMixin, CachedRequests):
                         )
                         soup = self._get_soup(rsp)
                         if recursive and soup is not None:
-                            linkstack.push(rsp)
+                            linkstack.append(rsp)
                         yield rsp, parser(rsp, match, soup, context=context)

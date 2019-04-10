@@ -7,9 +7,14 @@ from .action import *
 
 
 class LinkRelayScraper(ActionContainer, RequestsSoupCrawler):
+    LOGIN_URL = None
 
-    def __init__(self, **kwargs):
+    def __init__(self, login_data=None, **kwargs):
         super().__init__(**kwargs)
+
+    def login(self, login_data):
+        url = self.LOGIN_URL or self.ROOT_URL
+        r = self.post(url, data=login_data, refresh=True)
 
     def reducer(self, parsed, name, results):
         if parsed is None:
@@ -32,7 +37,7 @@ class LinkRelayScraper(ActionContainer, RequestsSoupCrawler):
 
     def _handle_actions(self, action, response, context, results):
         if response is None:
-            response = self.get(self.ROOT_URL)
+            response = self.get(self.ROOT_URL, refresh=True)
 
         kwargs = {
             'response': response,
