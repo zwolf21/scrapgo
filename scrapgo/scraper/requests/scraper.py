@@ -1,7 +1,9 @@
-from collections import abc
+from collections import abc, defaultdict
+from itertools import chain
 
-from scrapgo.utils.shortcuts import parse_query, parse_path, filter_params
+from scrapgo.utils.shortcuts import parse_query, parse_path, filter_params, abs_path
 from scrapgo.modules import CachedRequests, SoupParserMixin
+from scrapgo.lib.history import HistoryDict
 from .crawler import RequestsSoupCrawler
 from .action import *
 
@@ -26,18 +28,33 @@ class LinkRelayScraper(ActionContainer, RequestsSoupCrawler):
         elif isinstance(parsed, abc.Iterable):
             results[name].extend(list(parsed))
 
-    def scrap(self, root_params=None, context=None, until=None):
+    def scrap(self, root_params=None, context=None, until=None, _response=None, _link_relay=None, _results=None, crawl_style='depth'):
         self.context = context or {}
         self.root_params = root_params
-        return self._relay_actions(
-            self._handle_actions,
-            context,
-            until
-        )
+        if crawl_style == 'depth':
+            _results = _results or defaultdict(list)
+            action, *rest_relay = _link_relay or self.LINK_RELAY
+            for response in self._handle_actions(action, _response, context, _results):
+                if until is not None and until == action.name:
+                    return
+                if rest_relay:
+                    self.scrap(root_params, context, until,
+                               response, rest_relay, _results, crawl_style)
+            return _results
+        else:
+            return self._relay_actions(
+                self._handle_actions,
+                context,
+                until
+            )
 
     def _handle_actions(self, action, response, context, results):
+        # print('_handle_action:', self.history)
         if response is None:
             response = self.get(self.ROOT_URL, refresh=True)
+            previous = None
+        else:
+            previous = response.url
 
         kwargs = {
             'response': response,
@@ -64,6 +81,7 @@ class LinkRelayScraper(ActionContainer, RequestsSoupCrawler):
             patterns = action.formater(action.template, context=context)
             if isinstance(patterns, str):
                 patterns = [patterns]
+            patterns = list(patterns)
         else:
             patterns = [action.url]
 
@@ -71,34 +89,33 @@ class LinkRelayScraper(ActionContainer, RequestsSoupCrawler):
         for pattern in patterns:
             kwargs['pattern'] = pattern
             for rsp, parsed in self._crawl(**kwargs):
+                action.urls.append(rsp.url)
+                self.history.set_history(rsp.url, previous, action.name)
+                self.reducer(parsed, action.name, results)
                 if not self._is_parsable(rsp):
                     action.static = True
-                next_responses.append(rsp)
-                self.reducer(parsed, action.name, results)
+                else:
+                    yield rsp
 
         if action.static == True:
-            return [response]
-        return next_responses
+            yield response
+
+    # def find_referer(self, action, response):
+    #     if response is None:
+    #         return self.ROOT_URL
+    #     if not action.referer or not hasattr(response, 'trace'):
+    #         return
+    #     referer_actions = self.get_action(action.referer, many=True)
+    #     trace_url = set(response.trace)
+    #     trace_link = set(map(parse_path, response.trace))
+    #     urls = set(chain(*(a.urls for a in referer_actions)))
+    #     url = trace_url & urls | trace_link & urls
+    #     if url:
 
     def find_referer(self, action, response):
         if response is None:
             return self.ROOT_URL
-        if not action.referer or not hasattr(response, 'trace'):
-            return
-        action_name = action.referer
-        tracer = response.trace
-        actions = self.get_action(action_name, many=True)
-        ret = None
-        for action in actions:
-            for url in tracer:
-                link = parse_path(url)
-                if isinstance(action, (Url, Root)):
-                    if action.url in [url, link]:
-                        ret = url
-                else:
-                    p = action.regex
-                    if p.match(url) or p.match(link):
-                        ret = url
-        if ret:
-            referer = filter_params(ret, response.fields)
-            return referer
+        url = self.history.get_previous(response.url, action.referer)
+        if url:
+            return filter_params(url, response.fields)
+        return self.ROOT_URL

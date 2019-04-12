@@ -1,8 +1,10 @@
 import re
-from collections import defaultdict
+from collections import defaultdict, deque
 from itertools import takewhile
 
+from scrapgo.lib.history import HistoryDict
 from scrapgo.utils.shortcuts import parse_path, queryjoin
+
 from .actions import *
 
 
@@ -11,6 +13,7 @@ class ActionContainer(object):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.history = HistoryDict()
 
         if not isinstance(self.LINK_RELAY[0], Root):
             self.LINK_RELAY.insert(
@@ -23,6 +26,7 @@ class ActionContainer(object):
                 action.set_params = self._get_method(
                     action.set_params, 'set_params'
                 )
+
             if isinstance(action, FormatUrl):
                 action.formater = self._get_method(action.formater, 'formater')
 

@@ -5,6 +5,7 @@ from practice.naver_webtoon_scraper.webtoon2 import retrive_webtoon
 from practice.durginfo.druginfo_scraper import drug_search
 import os
 import sys
+from module_test.test_selenium import *
 
 sys.path.append('.')
 
@@ -25,8 +26,10 @@ def main():
     argparser.add_argument('-end', '--end', type=int, default=1)
 
     args = argparser.parse_args()
-    app = args.keywords[0]
-
+    try:
+        app = args.keywords[0]
+    except:
+        return
 
     context = {
         'save_to': MEDIA_ROOT

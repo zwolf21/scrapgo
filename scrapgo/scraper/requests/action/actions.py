@@ -12,6 +12,7 @@ class BaseAction(object):
         self.static = static
         self.refresh = refresh
         self.referer = referer
+        self.urls = []
 
 
 class Url(BaseAction):

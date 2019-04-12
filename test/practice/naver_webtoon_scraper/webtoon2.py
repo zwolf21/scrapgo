@@ -29,41 +29,46 @@ class NaverWebToonScraper(LinkRelayScraper):
             refresh=True,
             name='toon',
         ),
-        # urlpattern(  # 이미지, 파일등 과같은 source 항목을 다운로드 필터링등 처리할 수 있다
-        #     r'^https://shared-comic.pstatic.net/thumb/webtoon/(?P<titleId>\d+)/thumbnail/(?P<filename>.+)$',
-        #     name='toon_thumb',
-        #     parser='toon_thumb_parser',
-        # ),
-        urlpattern(
-            r'^/webtoon/list.nhn\?titleId=(?P<titleId>\d+)&weekday=(?P<weekday>\w*)&page=(?P<page>\d+)$',
-            name='toon_page',
+        urlpattern(  # 이미지, 파일등 과같은 source 항목을 다운로드 필터링등 처리할 수 있다
+            r'^https://shared-comic.pstatic.net/thumb/webtoon/(?P<titleId>\d+)/thumbnail/(?P<filename>.+)$',
+            name='toon_thumb',
+            parser='toon_thumb_parser',
+            referer='toon',
+            refresh=True,
+        ),
+        urltemplate(
+            'https://comic.naver.com/webtoon/list.nhn?titleId=642653&weekday=tue&page={page}',
+            renderer='toon_page_url_renderer',
             parser='episode_pagination_parser',
             refresh=True,
-            recursive=True  # 페이지 네이션 패턴을 재귀적으로 방문하여 모든 페이지에 방문함, 물론 필터링지정하면 필터링도 가능
+            name='toon_page',
         ),
-        # urlpattern(
-        #     r'^https://shared-comic.pstatic.net/thumb/webtoon/(?P<titleId>\d+)/(?P<no>\d+)/(?P<filename>.+)$',
-        #     parser='episode_thumb_parser',
-        #     name='episode_thumb',
-        # ),
+        urlpattern(
+            r'^https://shared-comic.pstatic.net/thumb/webtoon/(?P<titleId>\d+)/(?P<no>\d+)/(?P<filename>.+)$',
+            parser='episode_thumb_parser',
+            name='episode_thumb',
+            referer='toon_page',
+            refresh=True,
+        ),
         urlpattern(
             r'^/webtoon/detail.nhn\?titleId=(?P<titleId>\d+)&no=(?P<no>\d+)&weekday=(?P<weekday>\w*)$',
             parser='episode_parser',
-            name='episode',
+            name='episode'
         ),
-        # urlpattern(
-        #     r'^https://image-comic.pstatic.net/webtoon/(?P<titleId>\d+)/(?P<no>\d+)/(?P<filename>.+)$',
-        #     parser='episode_cut_parser',
-        #     name='episode_cut',
-        #     referer='episode',
-        # ),
+        urlpattern(
+            r'^https://image-comic.pstatic.net/webtoon/(?P<titleId>\d+)/(?P<no>\d+)/(?P<filename>.+)$',
+            parser='episode_cut_parser',
+            name='episode_cut',
+            referer='episode',
+            refresh=True
+        ),
         url(
             'https://apis.naver.com/commentBox/cbox/web_naver_list_jsonp.json',
             set_params='comment_page_counter_set_params',
             name='comment_page_counter',
             parser='get_comment_page_count',
             referer='episode',
-            # refresh=True,
+            refresh=True,
         ),
         url(
             'https://apis.naver.com/commentBox/cbox/web_naver_list_jsonp.json',
@@ -71,7 +76,7 @@ class NaverWebToonScraper(LinkRelayScraper):
             name='comment',
             parser='comment_parser',
             referer='episode',
-            # refresh=True,
+            refresh=True,
         )
     ]
 
@@ -82,13 +87,34 @@ class NaverWebToonScraper(LinkRelayScraper):
         return titleId and titleId == match('titleId')
 
     def root_parser(self, response, match, soup, context=None):
-        print('root_parser:', response.url)
-
-    def toon_parser(self, response, match, soup, context=None):
-        print('toon_parser', response.url)
+        # print('root_parser:', response.url)
         pass
 
+    def toon_parser(self, response, match, soup, context=None):
+        # print('toon_parser', response.url)
+        titleId = match('titleId')
+        episode_pattern = self.get_action('episode').regex
+        no_list = []
+        for a in soup('a', href=episode_pattern):
+            g = episode_pattern.match(a['href'])
+            no = g.group('no')
+            if no not in no_list:
+                no_list.append(no)
+        last_no = int(max(no_list, key=int))
+        episode_count = len(no_list)
+        context['meta'] = {
+            'start_page': 1,
+            'end_page': last_no // episode_count + 1
+        }
+
+    def toon_page_url_renderer(self, template, context=None):
+        start = context['meta']['start_page']
+        end = context['meta']['end_page']
+        for page in range(start, end+1):
+            yield template.format(page=page)
+
     def toon_thumb_parser(self, response, match, soup, context=None):
+        print('toon_thumb_parser:Referer', response.request.headers['Referer'])
         # print('toon_thumb_parser:', response.url)
         pass
 
@@ -101,10 +127,14 @@ class NaverWebToonScraper(LinkRelayScraper):
         pass
 
     def episode_thumb_parser(self, response, match, soup, context=None):
+        print('episode_thumb_parser:Referer',
+              response.request.headers['Referer'])
         pass
 
     def episode_cut_parser(self, response, match, soup, context=None):
-        print(response.request.headers['Referer'])
+        print('episode_cut_parser:Referer',
+              response.request.headers['Referer'])
+        # print(response.request.headers['Referer'])
         pass
 
     def comment_page_counter_set_params(self, referer_response, url, root_params, context):
@@ -145,6 +175,7 @@ class NaverWebToonScraper(LinkRelayScraper):
             yield queryjoin(url, params)
 
     def comment_parser(self, response, *args, **kwargs):
+        # print('comment_parser:tracer', response.trace)
         comment = parse_jsonp(response.text)
         comments = comment['result']['commentList']
         return comments
@@ -153,7 +184,7 @@ class NaverWebToonScraper(LinkRelayScraper):
 def retrive_webtoon(context):
     comment_save_to = os.path.join(context['save_to'], 'comment.csv')
     n = NaverWebToonScraper()
-    r = n.scrap(context=context)
+    r = n.scrap(context=context, crawl_style='depth')
     comments = r['comment']
     df = pd.DataFrame(comments)
     df.to_csv(comment_save_to)
