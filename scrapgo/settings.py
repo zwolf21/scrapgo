@@ -14,7 +14,7 @@ CACHE_METHODS = 'GET',
 
 # SoupParser
 BEAUTIFULSOUP_PARSER = 'html.parser'
-SCRAP_TARGET_ATTRS = 'href', 'src',
+CRAWL_TARGET_ATTRS = 'href', 'src',
 PARSE_CONTENT_TYPES = [
     'text/css', 'text/html', 'text/javascript', 'text/plain', 'text/xml'
 ]

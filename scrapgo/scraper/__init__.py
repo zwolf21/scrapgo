@@ -1,6 +1,2 @@
-from .requests.scraper import *
+from .requests.scraper import LinkRelayScraper
 from .requests.action import *
-
-__all__ = [
-    'LinkRelayScraper', 'href', 'src', 'location'
-]

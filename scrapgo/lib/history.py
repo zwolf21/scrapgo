@@ -2,14 +2,6 @@ from collections import UserDict, namedtuple
 
 History = namedtuple('History', ['url', 'previous', 'name'])
 
-histories = {
-    '/': History('/', None, 'root'),
-    'a': History('a', '/', 'list'),
-    'a/b': History('a/b', 'a', 'detail'),
-    'a/b/c': History('a/b/c', 'a/b', 'detail2'),
-    'a/b/c/d.gif': History('a/b/c/d.gif', 'a/b/c', 'image')
-}
-
 
 class HistoryDict(UserDict):
 
@@ -42,3 +34,6 @@ class HistoryDict(UserDict):
         for history in self.get_tracer(url):
             if history.name == name:
                 return history.url
+
+    def get_histories(self, name):
+        return [h.url for h in self.values() if h.name == name]

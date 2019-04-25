@@ -54,5 +54,8 @@ def filter_params(url, fields):
         return url
     p = urlparse(url)
     query = parse_query(url)
-    qry = {q: v for q, v in query.items() if q in fields}
-    return queryjoin(url, qry)
+    qsl = ['{}={}'.format(q, query.get(q, '')) for q in fields]
+    qs = '&'.join(qsl)
+    p = urlparse(url)
+    args = p.scheme, p.netloc, p.path, p.params, qs, p.fragment
+    return urlunparse(args)

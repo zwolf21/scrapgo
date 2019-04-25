@@ -6,6 +6,7 @@ from fake_useragent import FakeUserAgent
 
 from scrapgo import settings
 from scrapgo.lib.time.time import get_random_second
+from scrapgo.utils.shortcuts import filter_params
 
 
 class CachedRequests(object):
@@ -32,45 +33,53 @@ class CachedRequests(object):
             allowable_methods=self.CACHE_METHODS
         )
 
-    def _get(self, url, headers=None, refresh=False, **kwargs):
-        headers = headers or self.headers
-        if refresh:
-            if self.requests.cache.has_url(url):
-                self.requests.cache.delete_url(url)
-        r = self.requests.get(url, headers=headers, **kwargs)
-        r.raise_for_status()
+    def _refresh_cache(self, url):
+        if self.requests.cache.has_url(url):
+            self.requests.cache.delete_url(url)
 
-        if r.from_cache == False:
+    def _delay_control(self, response):
+        if response.from_cache == False:
             delay = self._get_delay()
             time.sleep(delay)
-            print('get {} from_cache: {} (delay:{}s)'.format(
-                url, r.from_cache, delay))
+            log = 'get {} from cache=={} (delay:{}s)'
+            print(log.format(response.url, response.from_cache, delay))
         else:
-            print('get {} from_cache: {}'.format(url, r.from_cache))
-
-        if not r.content:
-            self.requests.cache.delete_url(url)
-            print('Warning: {} has no content!'.format(r.url))
-        return r
-
-    def _post(self, url, data, headers=None, refresh=True, **kwargs):
-        headers = headers or self.headers
-        if refresh:
-            if self.requests.cache.has_url(url):
-                print('Delete Cached:',  url)
-                self.requests.cache.delete_url(url)
-        r = self.requests.post(url, data=data, headers=headers, **kwargs)
-        print('post {}'.format(url))
-        r.raise_for_status()
-        return r
+            log = 'get {} from_cache=={}'
+            print(log.format(response.url, response.from_cache))
 
     def _get_delay(self):
         if isinstance(self.REQUEST_DELAY, (tuple, list,)) and len(self.REQUEST_DELAY) == 2:
             return get_random_second(*self.REQUEST_DELAY)
         return self.REQUEST_DELAY
 
+    def _validate_response(self, response):
+        if not response.content:
+            self.requests.cache.delete_url(url)
+            print('Warning: {} has no content!'.format(response.url))
+
+    def _get(self, url, headers=None, refresh=False, fields=None):
+        headers = headers or self.get_header()
+        url = filter_params(url, fields)
+        if refresh:
+            self._refresh_cache(url)
+
+        r = self.requests.get(url, headers=headers)
+        r.raise_for_status()
+        self._delay_control(r)
+        self._validate_response(r)
+        return r
+
+    def _post(self, url, data, headers=None, refresh=True, **kwargs):
+        headers = headers or self.headers
+        if refresh:
+            self._refresh_cache(url)
+        r = self.requests.post(url, data=data, headers=headers, **kwargs)
+        print('post {}'.format(url))
+        r.raise_for_status()
+        return r
+
     def get_header(self):
-        return self.headers.copy()
+        return dict(self.headers)
 
     def set_header(self, headers):
         self.headers = headers

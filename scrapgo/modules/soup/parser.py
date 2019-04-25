@@ -16,8 +16,28 @@ def is_parsable(response, allowed_content_types=settings.PARSE_CONTENT_TYPES):
     return False
 
 
+def prettify_text(text):
+    lines = []
+    for line in text.split('\n'):
+        txt = re.sub('\s+', ' ', line).strip()
+        lines.append(txt)
+    lines = filter(None, lines)
+    return '\n'.join(lines)
+
+
+def prettify_textarea(soup):
+    linebreakers = ['a', 'p', 'div', 'h3', 'br']
+    if soup:
+        for line in soup(linebreakers):
+            line.replace_with(line.text + '\n')
+        if soup.text:
+            content = prettify_text(soup.text)
+            return content
+    return ''
+
+
 class SoupParserMixin(object):
-    SCRAP_TARGET_ATTRS = settings.SCRAP_TARGET_ATTRS
+    CRAWL_TARGET_ATTRS = settings.CRAWL_TARGET_ATTRS
     PARSE_CONTENT_TYPES = settings.PARSE_CONTENT_TYPES
 
     def __init__(self, parser=settings.BEAUTIFULSOUP_PARSER, **kwargs):
@@ -39,22 +59,15 @@ class SoupParserMixin(object):
             return BeautifulSoup(content, self.parser)
         return BeautifulSoup('', self.parser)
 
-    def _parse_link(self, response, link_patterns):
+    def _parse_link(self, response, link_pattern):
         soup = self._get_soup(response)
         parsed = set()
 
-        if not isinstance(link_patterns, (list, tuple, set)):
-            link_patterns = [link_patterns]
-
-        for pattern in link_patterns:
-            if isinstance(pattern, str):
-                yield pattern
-            else:
-                for attr in self.SCRAP_TARGET_ATTRS:
-                    for link in soup('', {attr: pattern}):
-                        if link not in parsed:
-                            parsed.add(link[attr])
-                            yield link[attr]
+        for attr in self.CRAWL_TARGET_ATTRS:
+            for link in soup('', {attr: link_pattern}):
+                if link not in parsed:
+                    parsed.add(link[attr])
+                    yield link[attr]
 
     def find_texts(self, soup, *args, **kwargs):
         ret = []
@@ -62,3 +75,13 @@ class SoupParserMixin(object):
             text = tag.text or ''
             ret.append(text.strip())
         return ret
+
+    def prettify_textarea(self, soup):
+        linebreakers = ['a', 'p', 'div', 'h3', 'br']
+        if soup:
+            for line in soup(linebreakers):
+                line.replace_with(line.text + '\n')
+            if soup.text:
+                content = prettify_text(soup.text)
+                return content
+        return ''

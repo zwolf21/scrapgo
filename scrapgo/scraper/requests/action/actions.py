@@ -1,31 +1,35 @@
 import re
 from collections import namedtuple
+import math
 
 
 class BaseAction(object):
 
-    def __init__(self, name=None, fields=None, filter=None, parser=None, static=False, refresh=False, referer=None):
+    def __init__(self, name=None, fields=None, filter=None, breaker=None, parser=None, static=False, refresh=False, referer=None):
         self.name = name
-        self.filter = filter
         self.fields = fields
+        self.filter = filter
+        self.breaker = breaker
         self.parser = parser
         self.static = static
         self.refresh = refresh
         self.referer = referer
-        self.urls = []
 
 
-class Url(BaseAction):
-    def __init__(self, url, set_params=None, **kwargs):
+class Root(BaseAction):
+    def __init__(self, url, **kwargs):
         super().__init__(**kwargs)
         self.name = self.name or url
-        self.set_params = set_params
         self.url = url
 
 
-class Root(Url):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class Url(BaseAction):
+    def __init__(self, url, generator=None, previewer=None, **kwargs):
+        super().__init__(**kwargs)
+        self.url = url
+        self.name = self.name or url
+        self.previewer = previewer
+        self.generator = generator
 
 
 class RegexUrl(BaseAction):
@@ -36,63 +40,45 @@ class RegexUrl(BaseAction):
         self.recursive = recursive
 
 
-class FormatUrl(BaseAction):
-    def __init__(self, template, formater, **kwargs):
-        super().__init__(**kwargs)
-        self.name = self.name or format
-        self.template = template
-        self.formater = formater
-
-
-def url(url, fields=None, set_params=None, name=None, filter=None, parser=None, refresh=False, relay=True, as_root=False, referer=None):
-    if as_root:
-        return Root(
-            url,
-            name=name,
-            fields=fields,
-            set_params=set_params,
-            filter=filter,
-            parser=parser,
-            refresh=refresh,
-            static=not relay,
-            referer=referer
-        )
-    else:
-        return Url(
-            url,
-            name=name,
-            fields=fields,
-            set_params=set_params,
-            filter=filter,
-            parser=parser,
-            refresh=refresh,
-            static=not relay,
-            referer=referer
-        )
-
-
-def urlpattern(regx, fields=None, name=None, filter=None, parser=None, recursive=False, refresh=False, relay=True, referer=None):
-    return RegexUrl(
-        regx,
+def root(url, fields=None, name=None, filter=None, breaker=None, parser=None, refresh=False, relay=True, referer=None):
+    return Root(
+        url,
         name=name,
         fields=fields,
         filter=filter,
+        breaker=None,
         parser=parser,
-        recursive=recursive,
         refresh=refresh,
         static=not relay,
         referer=referer
     )
 
 
-def urltemplate(template, renderer, fields=None, name=None, filter=None, parser=None, refresh=False, relay=True, referer=None):
-    return FormatUrl(
-        template,
-        renderer,
-        fields=fields,
+def url(url, generator=None, previewer=None, fields=None, name=None, filter=None, breaker=None, parser=None, refresh=False, relay=True, referer=None):
+    return Url(
+        url,
+        generator=generator,
+        previewer=previewer,
         name=name,
+        fields=fields,
         filter=filter,
+        breaker=breaker,
         parser=parser,
+        refresh=refresh,
+        static=not relay,
+        referer=referer
+    )
+
+
+def urlpattern(regx, fields=None, name=None, filter=None, breaker=None, parser=None, recursive=False, refresh=False, relay=True, referer=None):
+    return RegexUrl(
+        regx,
+        name=name,
+        fields=fields,
+        filter=filter,
+        breaker=breaker,
+        parser=parser,
+        recursive=recursive,
         refresh=refresh,
         static=not relay,
         referer=referer
