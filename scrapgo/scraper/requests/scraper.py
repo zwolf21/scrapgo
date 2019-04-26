@@ -9,7 +9,7 @@ from .action.actions import Root, Url
 
 
 ResponseMeta = namedtuple(
-    'ResponseMeta', ['match', 'query', 'soup', 'history', 'context'])
+    'ResponseMeta', ['match', 'query', 'soup', 'history'])
 
 
 class LinkRelayScraper(SoupParserMixin, CachedRequests):
@@ -37,12 +37,9 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
     def _set_response_meta(self, response, link, pattern=None, parent_response=None):
         match, query = self._parse_query_match(link, pattern)
         soup = self._get_soup(response)
-        if parent_response is not None:
-            context = parent_response.context
-        else:
-            context = {}
-        meta = ResponseMeta(match, query, soup, self.history, context)
+        meta = ResponseMeta(match, query, soup, self.history)
         setattr(response, 'scrap', meta)
+        setattr(response, 'parent', parent_response)
 
     def _link_filter(self, link, pattern=None, filter=None, **kwargs):
         match, query = self._parse_query_match(link, pattern)
@@ -105,7 +102,12 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
                         refresh=action.refresh,
                         fields=action.fields
                     )
-                    self._set_response_meta(res, link, action.regex)
+                    self._set_response_meta(
+                        response=res,
+                        link=link,
+                        pattern=action.regex,
+                        parent_response=parent_response
+                    )
                     parsed = parser(res, **kwargs)
                     self.reducer(parsed, action.name, results)
                     if action.recursive == True:
@@ -146,7 +148,11 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
                     refresh=action.refresh,
                     fields=action.fields
                 )
-                self._set_response_meta(res, link)
+                self._set_response_meta(
+                    response=res,
+                    link=link,
+                    parent_response=parent_response
+                )
                 parsed = parser(res, **kwargs)
                 self.reducer(parsed, action.name, results)
                 if self._is_parsable(res):
@@ -163,7 +169,10 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
     def _handle_action(self, action, parent_response=None, results=None, **kwargs):
         if parent_response is None:
             parent_response = self.get(self.ROOT_URL, refresh=True)
-            self._set_response_meta(parent_response, parent_response.url,)
+            self._set_response_meta(
+                response=parent_response,
+                link=parent_response.url
+            )
             self._set_history(self.ROOT_URL, None, 'root')
 
         if isinstance(action, (Root, Url)):

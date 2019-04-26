@@ -19,6 +19,7 @@ COMMENT_PAGE_COUNT = 5
 class NaverKinScraper(LinkRelayScraper):
     ROOT_URL = 'https://kin.naver.com/search/list.nhn'
     CRAWL_TARGET_ATTRS = settings.CRAWL_TARGET_ATTRS + ('content', )
+    REQUEST_DELAY = 0, 1
 
     LINK_RELAY = [
         url(
@@ -126,7 +127,14 @@ class NaverKinScraper(LinkRelayScraper):
         return answer_list
 
     def image_parser(self, response, context):
-        print('image_parser:')
+        query = response.parent.scrap.query
+        image = dict(
+            dirId=query['dirId'],
+            docId=query['docId'],
+            image_src=response.url
+        )
+        print('image_parser:image', image)
+        yield image
 
     def comment_urlrenderer(self, parent_response, path, context):
         query = parent_response.scrap.query
