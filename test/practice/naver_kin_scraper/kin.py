@@ -134,6 +134,8 @@ class NaverKinScraper(LinkRelayScraper):
             image_src=response.url
         )
         print('image_parser:image', image)
+        if image['docId'] == '300939037':
+            self.stop()
         yield image
 
     def comment_urlrenderer(self, parent_response, path, context):
@@ -173,7 +175,7 @@ class NaverKinScraper(LinkRelayScraper):
 
 def naver_kin_with_image(params, context):
     nk = NaverKinScraper(root_params=params)
-    r = nk.scrap(context=context)
+    r = nk.scrap(context=context, until='comment')
     for row in r['question']:
         print(row)
         break

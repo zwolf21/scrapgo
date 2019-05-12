@@ -22,6 +22,7 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
         self.ROOT_URL = queryjoin(url or self.ROOT_URL, root_params)
         self.history = HistoryDict()
         self.LINK_RELAY = self.LINK_RELAY or []
+        self._stop = False
 
     def _set_history(self, url, previous, name):
         url = abs_path(self.ROOT_URL, url)
@@ -211,6 +212,20 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
             )
         return responses
 
+    def _get_until_name(self, until, action):
+        if until is not None:
+            index = len(self.LINK_RELAY) - 1
+            for i, a in enumerate(self.LINK_RELAY):
+                if a.name == until:
+                    index = i + 1
+                    break
+            if index == len(self.LINK_RELAY):
+                return
+            elif index > len(self.LINK_RELAY):
+                raise ValueError("Cannot find {} in action!".format(until))
+            stop_name = self.LINK_RELAY[index].name
+            return stop_name
+
     def get(self, link, **kwargs):
         url = abs_path(self.ROOT_URL, link)
         response = self._get(url, **kwargs)
@@ -233,9 +248,13 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
             results=_results,
             **kwargs
         )
+        if until is not None:
+            stop_name = self._get_until_name(until, action)
+            if stop_name and action.name == stop_name:
+                return _results
         for response in responses:
-            if until is not None and until == action.name:
-                return
+            if self._stop == True:
+                break
             if rest:
                 self.scrap(
                     until=until,
@@ -245,6 +264,9 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
                     **kwargs
                 )
         return _results
+
+    def stop(self):
+        self._stop = True
 
     def reducer(self, parsed, name, results):
         if parsed is None:
