@@ -14,6 +14,7 @@ ResponseMeta = namedtuple(
 
 class LinkRelayScraper(SoupParserMixin, CachedRequests):
     ROOT_URL = None
+    REFRESH_ROOT = True
     LOGIN_URL = None
     LINK_RELAY = None
 
@@ -186,8 +187,10 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
                 yield parent_response
 
     def _handle_action(self, action, parent_response=None, results=None, **kwargs):
-        if parent_response is None:
-            parent_response = self.get(self.ROOT_URL, refresh=True)
+        if parent_response is None and self.ROOT_URL:
+            parent_response = self.get(
+                self.ROOT_URL, refresh=self.REFRESH_ROOT
+            )
             self._set_response_meta(
                 response=parent_response,
                 link=parent_response.url
