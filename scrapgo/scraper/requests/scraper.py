@@ -24,9 +24,9 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
         self.LINK_RELAY = self.LINK_RELAY or []
         self._stop = False
 
-    def _set_history(self, url, previous, name):
+    def _set_history(self, url, previous, name, warning=False):
         url = abs_path(self.ROOT_URL, url)
-        self.history.set_history(url, previous, name)
+        self.history.set_history(url, previous, name, warning)
 
     def _parse_query_match(self, link, pattern=None):
         match = None
@@ -70,7 +70,8 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
             'parser': self.default_parser,
             'previewer': self.url_previewer,
             'generator': self.query_generator,
-            'breaker': self.crawl_breaker
+            'breaker': self.crawl_breaker,
+            'payloader': self.payloader
         }[kind]
 
     def _crawl_link_pattern(self, parent_response, action, results, **kwargs):
@@ -95,6 +96,7 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
                     )
                     if not filtered:
                         continue
+
                     self._set_history(link, parent_url, action.name)
                     headers = self._set_referer(link, action.referer)
                     res = self.get(
@@ -125,9 +127,12 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
         if action.static == True:
             yield parent_response
 
-    def _visited_links(self, links, parent_response, action, results, **kwargs):
+    def _visited_links(self, links, parent_response, action, results, payloads, **kwargs):
         if isinstance(links, (str, abc.Mapping)):
             links = [links]
+
+        if isinstance(payloads, (str, bytes, abc.Mapping)):
+            payloads = [payloads]
 
         if parent_response is None:
             parent_url = None
@@ -136,36 +141,49 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
 
         parser = self._get_method(action.parser, 'parser')
         breaker = self._get_method(action.breaker, 'breaker')
-
+        isbreak = False
         for link in links:
-            if isinstance(link, (abc.Mapping)):
-                link = queryjoin(action.url, link)
-            if self._link_filter(link, **kwargs):
-                self._set_history(link, parent_url, action.name)
-                headers = self._set_referer(link, action.referer)
-                res = self.get(
-                    link=link,
-                    headers=headers,
-                    refresh=action.refresh,
-                    fields=action.fields
-                )
-                self._set_response_meta(
-                    response=res,
-                    link=link,
-                    parent_response=parent_response
-                )
-                parsed = parser(res, **kwargs)
-                self.reducer(parsed, action.name, results)
-                if self._is_parsable(res):
-                    yield res
-                else:
-                    if action.static == False:
-                        action.static = True
-                if breaker(res, **kwargs):
-                    break
+            if isbreak:
+                break
+            for payload in payloads:
+                if isinstance(link, (abc.Mapping)):
+                    link = queryjoin(action.url, link)
+                    # print('links', link)
+                if self._link_filter(link, **kwargs):
+                    self._set_history(
+                        link, parent_url, action.name,
+                        warning=True if payload is None else False
+                    )
+                    headers = self._set_referer(link, action.referer)
+                    request_kwargs = dict(
+                        link=link,
+                        headers=headers,
+                        refresh=action.refresh,
+                        fields=action.fields
+                    )
+                    if payload:
+                        request_kwargs['payload'] = payload
+                        res = self.post(**request_kwargs)
+                    else:
+                        res = self.get(**request_kwargs)
+                    self._set_response_meta(
+                        response=res,
+                        link=link,
+                        parent_response=parent_response
+                    )
+                    parsed = parser(res, **kwargs)
+                    self.reducer(parsed, action.name, results)
+                    if self._is_parsable(res):
+                        yield res
+                    else:
+                        if action.static == False:
+                            action.static = True
+                    if breaker(res, **kwargs):
+                        isbreak = True
+                        break
 
-        if action.static == True:
-            yield parent_response
+            if action.static == True:
+                yield parent_response
 
     def _handle_action(self, action, parent_response=None, results=None, **kwargs):
         if parent_response is None:
@@ -177,6 +195,8 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
             self._set_history(self.ROOT_URL, None, 'root')
 
         if isinstance(action, (Root, Url)):
+            payloader = self._get_method(action.payloader, 'payloader')
+            payloads = payloader(**kwargs)
             if isinstance(action, Root):
                 if action.url == '/':
                     links = self.ROOT_URL
@@ -189,18 +209,23 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
                     lnks = []
                     previewer = self._get_method(action.previewer, 'previewer')
                     prev_urls = previewer(
-                        parent_response, action.url, **kwargs)
-                    prev_responses = self._visited_links(prev_urls)
+                        parent_response, action.url,
+                        **kwargs
+                    )
+                    prev_responses = self._visited_links(
+                        prev_urls, payloads=payloads)
                     for prev_res in prev_responses:
                         lnk = generator(prev_res, action.url, **kwargs)
                         links.append(lnk)
                     links = chain(*links)
-                links = generator(parent_response, action.url, **kwargs)
+                else:
+                    links = generator(parent_response, action.url, **kwargs)
             responses = self._visited_links(
                 links=links,
                 parent_response=parent_response,
                 action=action,
                 results=results,
+                payloads=payloads,
                 **kwargs
             )
         else:
@@ -231,7 +256,8 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
         response = self._get(url, **kwargs)
         return response
 
-    def post(self, url, **kwargs):
+    def post(self, link, **kwargs):
+        url = abs_path(self.ROOT_URL, link)
         response = self._post(url, **kwargs)
         return response
 
@@ -304,3 +330,6 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
 
     def crawl_breaker(self, response, **kwargs):
         return False
+
+    def payloader(self, **kwargs):
+        return [None]

@@ -176,9 +176,9 @@ class NaverKinScraper(LinkRelayScraper):
 def naver_kin_with_image(params, context):
     nk = NaverKinScraper(root_params=params)
     r = nk.scrap(context=context, until='comment')
-    for row in r['question']:
-        print(row)
-        break
-    for row in r['comment']:
-        print(row)
-        break
+    # for row in r['question']:
+    #     print(row)
+    #     # break
+    # for row in r['comment']:
+    #     print(row)
+    #     # break

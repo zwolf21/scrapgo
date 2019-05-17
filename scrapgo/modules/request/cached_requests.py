@@ -69,12 +69,13 @@ class CachedRequests(object):
         self._validate_response(r)
         return r
 
-    def _post(self, url, data, headers=None, refresh=True, **kwargs):
+    def _post(self, url, payload, headers=None, refresh=True, fields=None):
         headers = headers or self.headers
+        url = filter_params(url, fields)
         if refresh:
             self._refresh_cache(url)
-        r = self.requests.post(url, data=data, headers=headers, **kwargs)
-        print('post {}'.format(url))
+        r = self.requests.post(url, data=payload, headers=headers)
+        print('post {} payloads: {}'.format(url, len(payload)))
         r.raise_for_status()
         return r
 

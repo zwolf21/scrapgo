@@ -5,8 +5,8 @@ History = namedtuple('History', ['url', 'previous', 'name'])
 
 class HistoryDict(UserDict):
 
-    def set_history(self, url, previous, name=None):
-        if url in self:
+    def set_history(self, url, previous, name=None, warning=True):
+        if url in self and warning:
             print('warning: {} has already exist in history'.format(url))
         self[url] = History(url, previous, name)
 
