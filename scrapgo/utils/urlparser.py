@@ -22,7 +22,7 @@ def parse_root(url):
 
 def parse_query(url, qsl=True):
     parse = urlparse(url)
-    queryset = parse_qsl(parse.query) if qsl == True else parse_qs(parse.query)
+    queryset = parse_qsl(parse.query) if qsl is True else parse_qs(parse.query)
     return dict(queryset)
 
 

@@ -17,6 +17,7 @@ class CachedRequests(object):
     CACHE_BACKEND = settings.CACHE_BACKEND
     CACHE_EXPIRATION = settings.CACHE_EXPIRATION
     CACHE_METHODS = settings.CACHE_METHODS
+    REQUEST_LOGGING = True
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -33,6 +34,19 @@ class CachedRequests(object):
             allowable_methods=self.CACHE_METHODS
         )
 
+    def get_request_log(self, url, from_cache, delay, payloads=None, **kwargs):
+        if from_cache is False:
+            if payloads is not None:
+                log = f"POST {url} (delay:{delay}s, payloads:{payloads})"
+            else:
+                log = f"GET {url} (delay:{delay}s)"
+        else:
+            if payloads is not None:
+                log = f"POST {url} From Cache (payloads:{payloads})"
+            else:
+                log = f"GET {url} From Cache"
+        return log
+
     def _refresh_cache(self, url, method='get'):
         if method == 'get':
             if self.requests.cache.has_url(url):
@@ -40,23 +54,11 @@ class CachedRequests(object):
         else:
             self.requests.remove_expired_responses()
 
-    def _delay_control(self, response, payloads=None):
-        if response.from_cache == False:
+    def _delay_control(self, response):
+        if response.from_cache is False:
             delay = self._get_delay()
             time.sleep(delay)
-            if payloads is not None:
-                log = 'POST {} from cache=={} (delay:{}s, payloads:{})'
-                print(log.format(response.url, response.from_cache, delay, payloads))
-            else:
-                log = 'GET {} from cache=={} (delay:{}s, payloads:{})'
-                print(log.format(response.url, response.from_cache, delay))
-        else:
-            if payloads is not None:
-                log = 'POST {} from_cache=={} (payloads:{})'
-                print(log.format(response.url, response.from_cache, payloads))
-            else:
-                log = 'GET {} from_cache=={}'
-                print(log.format(response.url, response.from_cache))
+            return delay
 
     def _get_delay(self):
         if isinstance(self.REQUEST_DELAY, (tuple, list,)) and len(self.REQUEST_DELAY) == 2:
@@ -76,7 +78,10 @@ class CachedRequests(object):
 
         r = self.requests.get(url, headers=headers)
         r.raise_for_status()
-        self._delay_control(r)
+        delay = self._delay_control(r)
+        if self.REQUEST_LOGGING is True:
+            log = self.get_request_log(url, r.from_cache, delay)
+            print(log)
         self._validate_response(r)
         return r
 
@@ -85,7 +90,10 @@ class CachedRequests(object):
         url = filter_params(url, fields)
         r = self.requests.post(url, data=payload, headers=headers)
         r.raise_for_status()
-        self._delay_control(r, payloads=len(payload))
+        delay = self._delay_control(r)
+        if self.REQUEST_LOGGING is True:
+            log = self.get_request_log(url, r.from_cache, delay, len(payload))
+            print(log)
         return r
 
     def get_header(self):

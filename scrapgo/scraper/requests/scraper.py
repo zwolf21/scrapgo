@@ -114,18 +114,18 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
                     )
                     parsed = parser(res, **kwargs)
                     self.reducer(parsed, action.name, results)
-                    if action.recursive == True:
+                    if action.recursive is True:
                         responses.append(res)
                     if self._is_parsable(res):
                         yield res
                     else:
-                        if action.static == False:
+                        if action.static is False:
                             action.static = True
                     isbreak = breaker(res, **kwargs)
                     if isbreak:
                         break
 
-        if action.static == True:
+        if action.static is True:
             yield parent_response
 
     def _visited_links(self, links, parent_response, action, results, payloads, **kwargs):
@@ -149,7 +149,6 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
             for payload in payloads:
                 if isinstance(link, (abc.Mapping)):
                     link = queryjoin(action.url, link)
-                    # print('links', link)
                 if self._link_filter(link, **kwargs):
                     self._set_history(
                         link, parent_url, action.name,
@@ -177,13 +176,13 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
                     if self._is_parsable(res):
                         yield res
                     else:
-                        if action.static == False:
+                        if action.static is False:
                             action.static = True
                     if breaker(res, **kwargs):
                         isbreak = True
                         break
 
-            if action.static == True:
+            if action.static is True:
                 yield parent_response
 
     def _handle_action(self, action, parent_response=None, results=None, **kwargs):
@@ -216,7 +215,9 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
                         **kwargs
                     )
                     prev_responses = self._visited_links(
-                        prev_urls, payloads=payloads)
+                        prev_urls,
+                        payloads=payloads
+                    )
                     for prev_res in prev_responses:
                         lnk = generator(prev_res, action.url, **kwargs)
                         links.append(lnk)
@@ -282,7 +283,7 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
             if stop_name and action.name == stop_name:
                 return _results
         for response in responses:
-            if self._stop == True:
+            if self._stop is True:
                 break
             if rest:
                 self.scrap(
@@ -311,7 +312,7 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
         actions = []
         for action in self.LINK_RELAY:
             if action.name == name:
-                if many == False:
+                if many is False:
                     return action
                 else:
                     actions.append(action)

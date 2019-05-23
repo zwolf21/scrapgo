@@ -20,6 +20,7 @@ class NaverKinScraper(LinkRelayScraper):
     ROOT_URL = 'https://kin.naver.com/search/list.nhn'
     CRAWL_TARGET_ATTRS = settings.CRAWL_TARGET_ATTRS + ('content', )
     REQUEST_DELAY = 0, 1
+    REQUEST_LOGGING = True
 
     LINK_RELAY = [
         url(

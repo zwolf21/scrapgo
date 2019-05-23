@@ -53,16 +53,17 @@ def main():
         sub_app = args.keywords[1]
         if sub_app in ['fund_list', 'fl']:
             print('test get_kofia_fund_list')
-            get_kofia_fund_list(args.start, args.end)
+            df = get_kofia_fund_list(args.start, args.end)
         elif sub_app in ['fund_detail', 'fd']:
             print('test get_kofia_fund_detail')
-            get_kofia_fund_detail(args.fund_std_code)
+            df = get_kofia_fund_detail(args.fund_std_code)
         elif sub_app in ['price_progress', 'fpg']:
             print('text get_kofia_fund_price_progress')
-            get_kofia_fund_price_progress(args.fund_std_code)
+            df = get_kofia_fund_price_progress(args.fund_std_code)
         elif sub_app in ['fund_settle_exso', 'exso']:
             print('test get_kofia_fund_settle_exso')
-            get_kofia_fund_settle_exso(args.fund_std_code)
+            df = get_kofia_fund_settle_exso(args.fund_std_code)
+        print(df.head())
 
 
 if __name__ == "__main__":
