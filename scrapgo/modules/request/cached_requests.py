@@ -1,12 +1,16 @@
 import time
 
+
 import requests
 import requests_cache
+from requests.exceptions import ConnectionError
 from fake_useragent import FakeUserAgent
 
 from scrapgo import settings
 from scrapgo.lib.time.time import get_random_second
 from scrapgo.utils.shortcuts import filter_params
+
+from .helper import retry
 
 
 class CachedRequests(object):
@@ -18,6 +22,7 @@ class CachedRequests(object):
     CACHE_EXPIRATION = settings.CACHE_EXPIRATION
     CACHE_METHODS = settings.CACHE_METHODS
     REQUEST_LOGGING = True
+    RETRY_INTERVAL_SECONDS = settings.RETRY_INTERVAL_SECONDS
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -70,6 +75,7 @@ class CachedRequests(object):
             self.requests.cache.delete_url(url)
             print('Warning: {} has no content!'.format(response.url))
 
+    @retry
     def _get(self, url, headers=None, refresh=False, fields=None):
         headers = headers or self.get_header()
         url = filter_params(url, fields)
@@ -85,6 +91,7 @@ class CachedRequests(object):
         self._validate_response(r)
         return r
 
+    @retry
     def _post(self, url, payload, headers=None, refresh=True, fields=None):
         headers = headers or self.headers
         url = filter_params(url, fields)
