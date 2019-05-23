@@ -33,19 +33,30 @@ class CachedRequests(object):
             allowable_methods=self.CACHE_METHODS
         )
 
-    def _refresh_cache(self, url):
-        if self.requests.cache.has_url(url):
-            self.requests.cache.delete_url(url)
+    def _refresh_cache(self, url, method='get'):
+        if method == 'get':
+            if self.requests.cache.has_url(url):
+                self.requests.cache.delete_url(url)
+        else:
+            self.requests.remove_expired_responses()
 
-    def _delay_control(self, response):
+    def _delay_control(self, response, payloads=None):
         if response.from_cache == False:
             delay = self._get_delay()
             time.sleep(delay)
-            log = 'get {} from cache=={} (delay:{}s)'
-            print(log.format(response.url, response.from_cache, delay))
+            if payloads is not None:
+                log = 'POST {} from cache=={} (delay:{}s, payloads:{})'
+                print(log.format(response.url, response.from_cache, delay, payloads))
+            else:
+                log = 'GET {} from cache=={} (delay:{}s, payloads:{})'
+                print(log.format(response.url, response.from_cache, delay))
         else:
-            log = 'get {} from_cache=={}'
-            print(log.format(response.url, response.from_cache))
+            if payloads is not None:
+                log = 'POST {} from_cache=={} (payloads:{})'
+                print(log.format(response.url, response.from_cache, payloads))
+            else:
+                log = 'GET {} from_cache=={}'
+                print(log.format(response.url, response.from_cache))
 
     def _get_delay(self):
         if isinstance(self.REQUEST_DELAY, (tuple, list,)) and len(self.REQUEST_DELAY) == 2:
@@ -69,13 +80,12 @@ class CachedRequests(object):
         self._validate_response(r)
         return r
 
-    def _post(self, url, data, headers=None, refresh=True, **kwargs):
+    def _post(self, url, payload, headers=None, refresh=True, fields=None):
         headers = headers or self.headers
-        if refresh:
-            self._refresh_cache(url)
-        r = self.requests.post(url, data=data, headers=headers, **kwargs)
-        print('post {}'.format(url))
+        url = filter_params(url, fields)
+        r = self.requests.post(url, data=payload, headers=headers)
         r.raise_for_status()
+        self._delay_control(r, payloads=len(payload))
         return r
 
     def get_header(self):
