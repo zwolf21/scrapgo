@@ -3,3 +3,5 @@ fake-useragent
 requests
 requests-cache
 selenium
+pymysql
+sqlalchemy
