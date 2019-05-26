@@ -101,7 +101,7 @@ class TableFrame(object):
         if renames is not None:
             dataframe = dataframe.rename(columns=renames)
 
-        table = self.select(uniques)
+        table = self.select(uniques, **kwargs)
         if if_exists == 'append':
             dataframe = get_difference_from(dataframe, table, uniques)
 
