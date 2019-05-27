@@ -4,4 +4,3 @@ requests
 requests-cache
 selenium
 pymysql
-sqlalchemy
