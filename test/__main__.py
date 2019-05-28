@@ -2,9 +2,9 @@ import argparse
 import os
 import sys
 
-# from practice.naver_kin_scraper.kin import naver_kin_with_image
-# from practice.naver_webtoon_scraper.webtoon2 import retrive_webtoon
-# from practice.durginfo.druginfo_scraper import drug_search
+from practice.naver_kin_scraper.kin import naver_kin_with_image
+from practice.naver_webtoon_scraper.webtoon2 import retrive_webtoon
+from practice.durginfo.druginfo_scraper import drug_search
 from practice.kofia_scraper import *
 
 sys.path.append('.')
@@ -29,7 +29,7 @@ def main():
     argparser.add_argument('-o', '--output', type=str)
     argparser.add_argument('-fund_std_code', '--fund_std_code')
     argparser.add_argument('-cd', '--code')
-    argparser.add_argument('-conn', '--db_connect_json_path')
+    argparser.add_argument('-conn', '--path_connect_info_jsonfile')
 
     args = argparser.parse_args()
     try:

@@ -1,0 +1,1 @@
+from .middleware import get_kofia_fundlist
