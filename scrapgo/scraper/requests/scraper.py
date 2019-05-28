@@ -137,8 +137,10 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
 
         if parent_response is None:
             parent_url = None
+            parent_payload = None
         else:
             parent_url = parent_response.url
+            parent_payload = parent_response.request.body
 
         parser = self._get_method(action.parser, 'parser')
         breaker = self._get_method(action.breaker, 'breaker')
@@ -151,7 +153,9 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
                     link = queryjoin(action.url, link)
                 if self._link_filter(link, **kwargs):
                     self._set_history(
-                        link, parent_url, action.name,
+                        payload or link,
+                        parent_payload or parent_url,
+                        action.name,
                         warning=True if payload is None else False
                     )
                     headers = self._set_referer(link, action.referer)
