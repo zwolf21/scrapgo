@@ -1,5 +1,5 @@
 import re
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 
 from bs4 import BeautifulSoup
 
@@ -85,3 +85,24 @@ class SoupParserMixin(object):
                 content = prettify_text(soup.text)
                 return content
         return ''
+    def parse_xml_table_tag(self, soup, target_tag_name, column_mapping=None, many=True):
+        if column_mapping is not None:
+            records = [
+                OrderedDict(
+                    (column_mapping.get(r.name, r.name), r.text)
+                    for r in r.children
+                    if r.name in column_mapping
+                )
+                for r in soup(target_tag_name)
+            ]
+        else:
+            records = [
+                OrderedDict((r.name, r.text))
+                for r in r.children
+                if r.name
+            ]
+        if many is True:
+            return records
+        if records:
+            return records[0]
+        return {}

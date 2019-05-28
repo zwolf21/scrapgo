@@ -17,3 +17,7 @@ pip-selfcheck.json
 im/
 *.exe
 *.log
+*.ipynb
+*.xls*
+*.csv
+*.json

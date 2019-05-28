@@ -1,7 +1,7 @@
 # DB INSERT 용 컬럼 매핑
 
 # RW_FUNDINFO TABLE
-DBMAP_RW_FUNDINFO = {
+펀드정보테이블컬럼매핑 = {
     '표준코드': "forgcode",
     '회사': "fmngcomcd",
     '펀드명': "fundnm",
@@ -90,3 +90,28 @@ DBMAP_RW_FUNDSETTLE_BY_DATE = {
     'created': "reg_date",
     'updated': "mod_date",
 }
+
+## 자주쓰는 DB 테이블 접근 변수
+
+펀드정보테이블명 = 'RW_FUNDINFO'
+지수테이블명 = 'RW_FUNDINDEX'
+결산테이블명 = 'RW_FUNDSETTLE'
+
+
+표준코드 = 펀드정보테이블컬럼매핑['표준코드']
+회사코드 = 펀드정보테이블컬럼매핑['회사코드']
+설정일 = 펀드정보테이블컬럼매핑['설정일']
+스크랩여부 = 펀드정보테이블컬럼매핑['스크랩여부']
+펀드명 = 펀드정보테이블컬럼매핑['펀드명']
+상환여부 = 펀드정보테이블컬럼매핑['상환여부']
+표준코드 = 펀드정보테이블컬럼매핑['표준코드']
+
+기준일자 = DBMAP_RW_FUNDINDEX['기준일자']
+
+회계기말 = DBMAP_RW_FUNDSETTLE_BY_DATE['회계기말']
+구분 = DBMAP_RW_FUNDSETTLE_BY_DATE['구분']
+
+
+펀드정보테이블기준키 = [표준코드]
+지수테이블기준키 = [표준코드, 기준일자]
+결산테이블기준키 = [회계기말, 표준코드, 구분]

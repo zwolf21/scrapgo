@@ -1,4 +1,4 @@
-import os
+# import os
 import pandas as pd
 
 from scrapgo.utils.fileutils import get_file_extension
@@ -20,10 +20,10 @@ def path2dataframe(path, **kwargs):
 
 def dataframe2path(dataframe, filename, extension='csv', index=False, **kwargs):
     if extension in CSV_FILE_EXTENSIONS:
-        path = os.path.join(filename, '.csv')
+        path = filename + '.csv'
         dataframe.to_csv(path, index=index, **kwargs)
     elif extension in EXCEL_FILE_EXTENSIONS:
-        path = os.path.join(filename, '.xlsx')
+        path = filename + '.xlsx'
         dataframe.to_excel(path, index=index, **kwargs)
     elif extension is None:
         print(dataframe.head())

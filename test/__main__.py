@@ -2,10 +2,12 @@ import argparse
 import os
 import sys
 
+import pandas as pd
+
 from practice.naver_kin_scraper.kin import naver_kin_with_image
 from practice.naver_webtoon_scraper.webtoon2 import retrive_webtoon
 from practice.durginfo.druginfo_scraper import drug_search
-from practice.kofia_scraper import *
+from practice.kofia_scraper import pipe, get_kofia_fundlist
 
 sys.path.append('.')
 
@@ -29,7 +31,7 @@ def main():
     argparser.add_argument('-o', '--output', type=str)
     argparser.add_argument('-fund_std_code', '--fund_std_code')
     argparser.add_argument('-cd', '--code')
-    argparser.add_argument('-conn', '--path_connect_info_jsonfile')
+    argparser.add_argument('-conn', '--path_connect_info_jsonfile', type=str)
 
     args = argparser.parse_args()
     try:
@@ -55,11 +57,11 @@ def main():
         }
         drug_search(params)
 
-    kwargs = {k: v for k, v in args._get_kwargs() if v is not None}
+    kwargs = dict(args._get_kwargs())
     if app in ['kofia']:
         sub_app = args.keywords[1]
         if sub_app in ['ls']:
-            df = get_kofia_fundlist(**kwargs)
+            apply = get_kofia_fundlist
         # if sub_app in ['fund_list', 'fl']:
         #     print('test get_kofia_fund_list')
         #     df = get_kofia_fund_list(args.start, args.end)
@@ -72,7 +74,10 @@ def main():
         # elif sub_app in ['fund_settle_exso', 'exso']:
         #     print('test get_kofia_fund_settle_exso')
         #     df = get_kofia_fund_settle_exso(args.fund_std_code)
-        print(df.head())
+        else:
+            raise ValueError(f"{sub_app} 은 명령어 리스트에 존재하지 않습니다.")
+        pipe(apply, **kwargs)
+        # print(df.head())
 
 
 if __name__ == "__main__":

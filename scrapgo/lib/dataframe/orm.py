@@ -24,13 +24,15 @@ QUERY_FORMAT = {
 class TableFrame(object):
 
     def __init__(self, path_connect_info_jsonfile=None, **conn_info):
+        self.con = None
         if path_connect_info_jsonfile:
             if get_file_extension(path_connect_info_jsonfile) == '.json':
                 conn_info = read_json(path_connect_info_jsonfile)
         self.con = self._get_db_connection(**conn_info)
 
     def __del__(self):
-        self.con.close()
+        if self.con:
+            self.con.close()
 
     def _get_db_connection(self, **kwargs):
         db_backend = kwargs.get('backend', 'sqlite3')
@@ -102,24 +104,25 @@ class TableFrame(object):
         df = self.get_dataframe(query)
         return df.loc[0, "COUNT(*)"]
 
-    def insert_dataframe(self, dataframe, table, uniques, renames=None, updated=None, created=None, if_exists='append', **kwargs):
+    def insert(self, dataframe, table, uniques, renames=None, updated=None, created=None, if_exists='append', logging=True, **kwargs):
         if renames is not None:
             dataframe = dataframe.rename(columns=renames)
 
-        table = self.select(uniques, **kwargs)
+        df_table = self.select(table, uniques, **kwargs)
         if if_exists == 'append':
-            dataframe = get_difference_from(dataframe, table, uniques)
+            dataframe = get_difference_from(dataframe, df_table, uniques)
 
-        if dataframe.empty:
-            return
+        if dataframe.empty is False:            
+            if updated is not None:
+                dataframe[updated] = self._get_now()
+            if created is not None:
+                dataframe[created] = self._get_now()
 
-        if updated is not None:
-            dataframe[updated] = self._get_now()
-        if created is not None:
-            dataframe[created] = self._get_now()
-
-        dataframe.to_sql(
-            table, self.con,
-            if_exists=if_exists,
-            index=False
-        )
+            dataframe.to_sql(
+                df_table, self.con,
+                if_exists=if_exists,
+                index=False
+            )
+        if logging is True:
+            count = dataframe.shape[0]
+            print(f"{count} ROW(s) was Inserted into {table} ({self._get_now()})")

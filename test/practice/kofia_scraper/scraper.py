@@ -7,7 +7,6 @@ from urllib.parse import unquote
 from datetime import datetime, timedelta
 
 from scrapgo import LinkRelayScraper, urlpattern, url, root
-from .utils import *
 
 from .payloaders import (
     get_fund_list_payload,
@@ -17,7 +16,7 @@ from .payloaders import (
     get_fund_exso_payload,
     get_fund_exso_payload_by_date,
 )
-from .scrap_column_mappings import (
+from .scrap_mappings import (
     SCRAPMAP_FUND_LIST_COLUMNS,
     SCRAPMAP_FUND_DETAIL_COLUMNS,
     SCRAPMAP_PRICE_PROGRESS_COLUMNS,
@@ -31,6 +30,7 @@ class KofiaScraper(LinkRelayScraper):
     CACHE_NAME = 'PROFP_SCRAP_CACHE'
     REQUEST_DELAY = 0
     RETRY_INTERVAL_SECONDS = 10, 100, 1000,
+    REQUEST_LOGGING = False
 
 
 class KofiaFundListScraper(KofiaScraper):
@@ -52,7 +52,7 @@ class KofiaFundListScraper(KofiaScraper):
 
     def fund_list_parser(self, response, **kwargs):
         soup = response.scrap.soup
-        fund_list = parse_xml_table_tag(soup, 'selectmeta', SCRAPMAP_FUND_LIST_COLUMNS)
+        fund_list = self.parse_xml_table_tag(soup, 'selectmeta', SCRAPMAP_FUND_LIST_COLUMNS)
         return fund_list
     
 
@@ -84,7 +84,7 @@ class KofiaFundInfoScraper(KofiaFundListScraper):
 
     def fund_detail_parser(self, response, fund_std_code, **kwargs):
         soup = response.scrap.soup
-        fund = parse_xml_table_tag(
+        fund = self.parse_xml_table_tag(
             soup, 'comfundbasinfooutdto', SCRAPMAP_FUND_DETAIL_COLUMNS,
             many=False
         )
@@ -98,7 +98,7 @@ class KofiaFundInfoScraper(KofiaFundListScraper):
 
     def fund_etc_parser(self, response, fund_std_code):
         soup = response.scrap.soup
-        etc = parse_xml_table_tag(
+        etc = self.parse_xml_table_tag(
             soup, 'comfundstdcotinfodto', SCRAPMAP_FUND_DETAIL_COLUMNS,
             many=False
         )
@@ -131,7 +131,7 @@ class KofiaPriceProgressScraper(KofiaScraper):
 
     def price_progress_parser(self, response, fund_std_code, company_code, **kwargs):
         soup = response.scrap.soup
-        price_progresses = parse_xml_table_tag(
+        price_progresses = self.parse_xml_table_tag(
             soup, 'pricemodlist', SCRAPMAP_PRICE_PROGRESS_COLUMNS
         )
         for progress in price_progresses:
@@ -158,7 +158,7 @@ class KofiaSettleExSoScraper(KofiaScraper):
 
     def fund_exso_parser(self, response, fund_std_code, **kwargs):
         soup = response.scrap.soup
-        exsos = parse_xml_table_tag(
+        exsos = self.parse_xml_table_tag(
             soup, 'settleexlist', SCRAPMAP_SETTLE_EXSO_COLUMNS)
         for exso in exsos:
             exso['표준코드'] = fund_std_code
@@ -185,7 +185,7 @@ class KofiaSettleExSoByDateScraper(KofiaScraper):
 
     def fund_exso_by_date_parser(self, response, **kwargs):
         soup = response.scrap.soup
-        exsos = parse_xml_table_tag(
+        exsos = self.parse_xml_table_tag(
             soup, 'selectmeta',
             many=True,
             column_mapping=SCRAPMAP_SETTLE_EXSO_BY_DATE_COLUMNS
