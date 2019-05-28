@@ -73,7 +73,8 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['requests', 'requests-cache',
-        'bs4', 'fake-useragent', 'jinja2'],
+        'bs4', 'fake-useragent', 'jinja2',
+    ],
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). You can install these using the following syntax,
