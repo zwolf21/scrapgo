@@ -1,5 +1,7 @@
-import pandas as pd
+from collections import abc
 import sqlite3
+
+import pandas as pd
 import pymysql
 from sqlalchemy import create_engine
 
@@ -21,20 +23,29 @@ QUERY_FORMAT = {
 }
 
 
+def _join_columns(df, column, type=str):
+    if type is str:
+        clause = ','.join(f'"{k}"' for k in df[column].values)
+    else:
+        clause = ','.join(df[column].values)
+    return clause  
+
 class TableFrame(object):
 
     def __init__(self, path_connect_info_jsonfile=None, **conn_info):
+        self.con = None
         if path_connect_info_jsonfile:
             if get_file_extension(path_connect_info_jsonfile) == '.json':
                 conn_info = read_json(path_connect_info_jsonfile)
         self.con = self._get_db_connection(**conn_info)
 
     def __del__(self):
-        self.con.close()
+        if self.con:
+            self.con.close()
 
     def _get_db_connection(self, **kwargs):
-        db_backend = kwargs.get('backend', 'sqlite3')
-        if db_backend == 'sqlite3':
+        db_backend = kwargs.pop('backend', 'sqlite3')
+        if db_backend == 'sqlite3': 
             con = sqlite3.connect(**kwargs)
         elif db_backend == 'mysql':
             con_str_fmt = "mysql+pymysql://{user}:{passwd}@{host}:{port}/{db}?charset={charset}"
@@ -44,6 +55,9 @@ class TableFrame(object):
         else:
             raise ValueError("DB backend only supported in sqlite3, mysql")
         return con
+    
+    def close(self):
+        self.con.close()
 
     def _get_now(self):
         return pd.Timestamp.now()
@@ -53,8 +67,12 @@ class TableFrame(object):
         return fmt.format(table=table, **kwargs)
 
     def get_dataframe(self, query, **kwargs):
-        dataframe = pd.read_sql(query, self.con, **kwargs)
-        return dataframe
+        try:
+            dataframe = pd.read_sql(query, self.con, **kwargs)
+        except Exception as e:
+            print(e)
+        else:
+            return dataframe
 
     def select(self, table, columns=None, where=None):
         if columns is None:
@@ -79,7 +97,8 @@ class TableFrame(object):
                 column=column, where=where, **kwargs
             )
         df = self.get_dataframe(query)
-        return df.loc[0, f"MAX({column})"]
+        if df is not None:
+            return df.loc[0, f"MAX({column})"]
 
     def min(self, table, column, where=None, **kwargs):
         if where is None:
@@ -90,7 +109,8 @@ class TableFrame(object):
                 column=column, where=where, **kwargs
             )
         df = self.get_dataframe(query)
-        return df.loc[0, f"MIN({column})"]
+        if df is not None:
+            return df.loc[0, f"MIN({column})"]
 
     def count(self, table, where=None, **kwargs):
         if where is None:
@@ -100,26 +120,70 @@ class TableFrame(object):
                 'count-where', table, where=where, **kwargs
             )
         df = self.get_dataframe(query)
-        return df.loc[0, "COUNT(*)"]
+        if df is not None:
+            return df.loc[0, "COUNT(*)"]
+        return 0
 
-    def insert_dataframe(self, dataframe, table, uniques, renames=None, updated=None, created=None, if_exists='append', **kwargs):
+    def insert(self, dataframe, table, uniques, renames=None, updated=None, created=None, if_exists='append', logging=True, **kwargs):
         if renames is not None:
             dataframe = dataframe.rename(columns=renames)
-
-        table = self.select(uniques, **kwargs)
+        
         if if_exists == 'append':
-            dataframe = get_difference_from(dataframe, table, uniques)
+            df_table = self.select(table, uniques, **kwargs)
+            if df_table is not None:
+                dataframe = get_difference_from(dataframe, df_table, uniques)
 
-        if dataframe.empty:
-            return
+        if dataframe.empty is False:            
+            if updated is not None:
+                dataframe[updated] = self._get_now()
+            if created is not None:
+                dataframe[created] = self._get_now()
 
-        if updated is not None:
-            dataframe[updated] = self._get_now()
-        if created is not None:
-            dataframe[created] = self._get_now()
+            dataframe.to_sql(
+                table, self.con,
+                if_exists=if_exists,
+                index=False
+            )
+        if logging is True:
+            count = dataframe.shape[0]
+            print(f"{count} ROW(s) was Inserted into {table} ({self._get_now()})")
 
-        dataframe.to_sql(
-            table, self.con,
-            if_exists=if_exists,
-            index=False
-        )
+    
+    def update(self, dataframe, table, source_column, dest_column, valuemap=None, on=None, index=None, pk=None, default=None, value_type=str, pk_type=str, logging=True):
+        fmt = "UPDATE {table} SET {column}={value} WHERE {column} != {value} AND {pk} IN ({pk_values})"
+        for value, df in dataframe.groupby(source_column):
+            if isinstance(valuemap, abc.Mapping):
+                value = valuemap.get(value, default or value)
+            elif callable(valuemap):
+                value = valuemap(value)
+            
+            if value_type is str:
+                value = f'"{value}"'
+            pk_values = _join_columns(df, on or index, pk_type)
+            query = fmt.format(
+                table=table,
+                column=dest_column,
+                value=value,
+                pk= on or pk,
+                pk_values=pk_values,    
+            )
+            if logging is True:
+                count = df.shape[0]
+                print(f"{count} ROW(s) was Inserted into {table} by Query: {query[:30]} ({self._get_now()})")
+            self.con.execute(query)
+    
+    def delete(self, table, where=None, logging=True):
+        if where is None:
+            count = self.count(table)
+            query = self._get_query('delete', table=table)
+        else:
+            count = self.count(table, where=where)
+            query = self._get_query(
+                'delete-where', table=table, where=where
+            )
+        self.con.execute(query)
+        if logging is True:
+            print(f"{count} ROW(s) was Deleted by Query: {query}")
+
+
+

@@ -76,7 +76,7 @@ class CachedRequests(object):
             print('Warning: {} has no content!'.format(response.url))
 
     @retry
-    def _get(self, url, headers=None, refresh=False, fields=None):
+    def _get(self, url, headers=None, refresh=False, fields=None, **kwargs):
         headers = headers or self.get_header()
         url = filter_params(url, fields)
         if refresh:
@@ -86,20 +86,20 @@ class CachedRequests(object):
         r.raise_for_status()
         delay = self._delay_control(r)
         if self.REQUEST_LOGGING is True:
-            log = self.get_request_log(url, r.from_cache, delay)
+            log = self.get_request_log(url, r.from_cache, delay, **kwargs)
             print(log)
         self._validate_response(r)
         return r
 
     @retry
-    def _post(self, url, payload, headers=None, refresh=True, fields=None):
+    def _post(self, url, payload, headers=None, refresh=True, fields=None, **kwargs):
         headers = headers or self.headers
         url = filter_params(url, fields)
         r = self.requests.post(url, data=payload, headers=headers)
         r.raise_for_status()
         delay = self._delay_control(r)
         if self.REQUEST_LOGGING is True:
-            log = self.get_request_log(url, r.from_cache, delay, len(payload))
+            log = self.get_request_log(url, r.from_cache, delay, len(payload), **kwargs)
             print(log)
         return r
 

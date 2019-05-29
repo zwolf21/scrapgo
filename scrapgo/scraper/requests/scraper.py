@@ -104,7 +104,8 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
                         link=link,
                         headers=headers,
                         refresh=action.refresh,
-                        fields=action.fields
+                        fields=action.fields,
+                        **kwargs
                     )
                     self._set_response_meta(
                         response=res,
@@ -167,9 +168,9 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
                     )
                     if payload:
                         request_kwargs['payload'] = payload
-                        res = self.post(**request_kwargs)
+                        res = self.post(**request_kwargs, **kwargs)
                     else:
-                        res = self.get(**request_kwargs)
+                        res = self.get(**request_kwargs, **kwargs)
                     self._set_response_meta(
                         response=res,
                         link=link,
@@ -192,7 +193,7 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
     def _handle_action(self, action, parent_response=None, results=None, **kwargs):
         if parent_response is None and self.ROOT_URL:
             parent_response = self.get(
-                self.ROOT_URL, refresh=self.REFRESH_ROOT
+                self.ROOT_URL, refresh=self.REFRESH_ROOT, **kwargs
             )
             self._set_response_meta(
                 response=parent_response,
