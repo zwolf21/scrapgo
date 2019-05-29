@@ -31,9 +31,8 @@ class KofiaFundListScraper(KofiaScraper):
         )
     ]
 
-    def fund_list_payloader(self, start_date, end_date):
-        payload = get_fund_list_payload(start_date, end_date)
-        yield payload
+    payload = get_fund_list_payload(start_date, end_date)
+    yield payload
 
     def fund_list_parser(self, response, **kwargs):
         soup = response.scrap.soup

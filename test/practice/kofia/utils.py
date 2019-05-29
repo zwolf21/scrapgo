@@ -10,7 +10,7 @@ def parse_record(soup, tag, column_mapping, many=True):
         )
         for r in soup(tag)
     ]
-    if many == True:
+    if many is True:
         return records
     if records:
         return records[0]
