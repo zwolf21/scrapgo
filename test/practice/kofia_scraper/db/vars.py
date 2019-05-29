@@ -44,17 +44,18 @@
     'updated': "mod_date",
 }
 
-DBMAP_RW_FUNDINDEX = {
+
+지수테이블컬럼매핑 = {
     '표준코드': 'forgcode',
     '기준일자': 'standarddt',
-    # '기준가격': 'standardcot', # DB와 안맞아서 아래 거로 바꿈
-    '기준가격': 'standardassstdcot',
+    '기준가격': 'standardcot',  # DB와 안맞아서 아래 거로 바꿈
+    # '기준가격': 'standardassstdcot',
     '전일대비등락': 'vbefdayfltstdcot',
     '과표기준가격': 'standardassstdcot',
     '설정원본': 'uoriginalamt',
     'KOSPI': 'kospiepn',
-    # 'KOSPI200': 'kospi200epn',
-    'KOSPI200': 'kospiepn',  # DB와 안맞아서 아래 거로 바꿈
+    'KOSPI200': 'kospi20epn',
+    # 'KOSPI200': 'kospiepn',  # DB와 안맞아서 아래 거로 바꿈
     'KOSDAQ': 'kosdaqepn',
     '국공채(3년만기)': 'tbondbnd3y',
     '회사채(3년만기)': 'companybnd3y',
@@ -75,7 +76,7 @@ DBMAP_RW_FUNDSETTLE = {
     'updated': "mod_date",
 }
 
-DBMAP_RW_FUNDSETTLE_BY_DATE = {
+결산테이블컬럼매핑 = {
     '표준코드': 'forgcode',
     # '회사': "fmngcomcd",
     # '펀드명': "fundnm",
@@ -106,10 +107,10 @@ DBMAP_RW_FUNDSETTLE_BY_DATE = {
 상환여부 = 펀드정보테이블컬럼매핑['상환여부']
 표준코드 = 펀드정보테이블컬럼매핑['표준코드']
 
-기준일자 = DBMAP_RW_FUNDINDEX['기준일자']
+기준일자 = 지수테이블컬럼매핑['기준일자']
 
-회계기말 = DBMAP_RW_FUNDSETTLE_BY_DATE['회계기말']
-구분 = DBMAP_RW_FUNDSETTLE_BY_DATE['구분']
+회계기말 = 결산테이블컬럼매핑['회계기말']
+구분 = 결산테이블컬럼매핑['구분']
 
 
 펀드정보테이블기준키 = [표준코드]

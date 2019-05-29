@@ -7,19 +7,27 @@ from scrapgo.lib.dataframe import dataframe2path, TableFrame
 
 from .settings import OUTPUT_FILE_FORMAT
 
-from .apps import get_kofia_fundlist
+from .apps import get_kofia_fundlist, get_kofia_fund_detail_list, get_kofia_price_progress
 from .db.vars import (
     펀드정보테이블명, 펀드정보테이블기준키, 펀드정보테이블컬럼매핑,
+    지수테이블명, 지수테이블기준키, 지수테이블컬럼매핑
 )
 
 
-App = namedtuple('App', 'prefix table uniques mapping')
+App = namedtuple('App', 'prefix table uniques mapping', defaults=('Fund', None, None, None,))
 
 apps = {
     get_kofia_fundlist: App(
         'FundList_{start_date}~{end_date}',
+    ),
+    get_kofia_fund_detail_list: App(
+        'FundDetailList_{start_date}~{end_date}',
         펀드정보테이블명, 펀드정보테이블기준키, 펀드정보테이블컬럼매핑
-    )
+    ),
+    get_kofia_price_progress: App(
+        'FundPriceProgress',
+        지수테이블명, 지수테이블기준키, 지수테이블컬럼매핑
+    ),
 }
 
 def pipe(app, **kwargs):

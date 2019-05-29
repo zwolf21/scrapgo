@@ -1,4 +1,4 @@
-def get_fund_list_payload(start_date, end_date):
+def get_fund_list_payload(start_date, end_date, **kwargs):
     payload_template = \
         '''<?xml version="1.0" encoding="utf-8"?>
     <message>
@@ -21,7 +21,7 @@ def get_fund_list_payload(start_date, end_date):
     return payload
 
 
-def get_fund_etc_payload(fund_std_code, company_code):
+def get_fund_etc_payload(fund_std_code, company_code, **kwargs):
     payload_template = \
         '''<?xml version="1.0" encoding="utf-8"?>
     <message>
@@ -45,7 +45,7 @@ def get_fund_etc_payload(fund_std_code, company_code):
     return payload
 
 
-def get_fund_detail_payload(fund_std_code):
+def get_fund_detail_payload(fund_std_code, **kwargs):
     payload_template = \
         '''<?xml version="1.0" encoding="utf-8"?>
     <message>
@@ -66,7 +66,7 @@ def get_fund_detail_payload(fund_std_code):
     return payload
 
 
-def get_price_change_progress_payload(fund_std_code, company_code, start_date, end_date, daily=True):
+def get_price_change_progress_payload(fund_std_code, company_code, start_date, end_date, daily=True, **kwargs):
     payload_template = \
         '''<?xml version="1.0" encoding="utf-8"?>
     <message>
@@ -95,7 +95,7 @@ def get_price_change_progress_payload(fund_std_code, company_code, start_date, e
     return payload
 
 
-def get_fund_exso_payload(fund_std_code, company_code):
+def get_fund_exso_payload(fund_std_code, company_code, **kwargs):
     payload_template = \
         '''<?xml version="1.0" encoding="utf-8"?>
     <message>
@@ -117,7 +117,7 @@ def get_fund_exso_payload(fund_std_code, company_code):
     return payload
 
 
-def get_fund_exso_payload_by_date(start_date, end_date):
+def get_fund_exso_payload_by_date(start_date, end_date, **kwargs):
     payload_template = \
         '''<?xml version="1.0" encoding="utf-8"?>
     <message>

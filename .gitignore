@@ -10,7 +10,7 @@ man/
 .Python
 *.py[cod]
 pip-selfcheck.json
-*.sqlite*
+*.sqlite
 /dist
 /*.egg-info
 /media

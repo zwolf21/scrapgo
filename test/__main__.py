@@ -7,7 +7,10 @@ import pandas as pd
 from practice.naver_kin_scraper.kin import naver_kin_with_image
 from practice.naver_webtoon_scraper.webtoon2 import retrive_webtoon
 from practice.durginfo.druginfo_scraper import drug_search
-from practice.kofia_scraper import pipe, get_kofia_fundlist
+from practice.kofia_scraper import (
+    pipe,
+    get_kofia_fundlist, get_kofia_fund_detail_list, get_kofia_price_progress
+)
 
 sys.path.append('.')
 
@@ -62,6 +65,10 @@ def main():
         sub_app = args.keywords[1]
         if sub_app in ['ls']:
             apply = get_kofia_fundlist
+        elif sub_app in ['ls-al']:
+            apply = get_kofia_fund_detail_list
+        elif sub_app in ['pg']:
+            apply = get_kofia_price_progress
         # if sub_app in ['fund_list', 'fl']:
         #     print('test get_kofia_fund_list')
         #     df = get_kofia_fund_list(args.start, args.end)

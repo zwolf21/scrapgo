@@ -30,7 +30,7 @@ class KofiaScraper(LinkRelayScraper):
     CACHE_NAME = 'PROFP_SCRAP_CACHE'
     REQUEST_DELAY = 0
     RETRY_INTERVAL_SECONDS = 10, 100, 1000,
-    REQUEST_LOGGING = False
+    # REQUEST_LOGGING = 
 
 
 class KofiaFundListScraper(KofiaScraper):
@@ -43,11 +43,15 @@ class KofiaFundListScraper(KofiaScraper):
             name='fund_list'
         )
     ]
+    def get_request_log(self, *args, **kwargs):
+        # print('get_request_log:', kwargs)
+        log = super().get_request_log(*args, **kwargs)
+        return "FUND_LIST: {log} {start_date}~{end_date}".format(log=log,**kwargs)
 
-    def fund_list_payloader(self, start_date, end_date, **kwargs):
-        log = f"Retrieve FundList by Date Range: {start_date}~{end_date}"
-        print(log)
-        payload = get_fund_list_payload(start_date, end_date)
+    def fund_list_payloader(self,**kwargs):
+        # log = f"Retrieve FundList by Date Range: {start_date}~{end_date}"
+        # print(log)
+        payload = get_fund_list_payload(**kwargs)
         yield payload
 
     def fund_list_parser(self, response, **kwargs):
@@ -58,7 +62,7 @@ class KofiaFundListScraper(KofiaScraper):
 
 
 
-class KofiaFundInfoScraper(KofiaFundListScraper):
+class KofiaFundInfoScraper(KofiaScraper):
     # REQUEST_LOGGING = False
     LINK_RELAY = [
         url(
@@ -75,9 +79,11 @@ class KofiaFundInfoScraper(KofiaFundListScraper):
         ),
     ]
 
+    def get_request_log(self, *args, **kwargs):
+        log = super().get_request_log(*args, **kwargs)
+        return "FUND_DETAIL: {log} {fund_std_code}".format(log=log, **kwargs)
+
     def fund_detail_payloader(self, fund_std_code):
-        log = f"Retrieve FundDetailInfo by FundCode: {fund_std_code}"
-        print(log)
         payload = get_fund_detail_payload(fund_std_code)
         # self.fund_std_code = fund_std_code
         yield payload
@@ -119,14 +125,12 @@ class KofiaPriceProgressScraper(KofiaScraper):
         )
     ]
 
-    def price_progress_payloader(self, fund_std_code, company_code, initial_date):
-        start_date = initial_date
-        end_date = datetime.today().strftime("%Y%m%d")
-        payload = get_price_change_progress_payload(
-            fund_std_code, company_code,
-            start_date=start_date,
-            end_date=end_date
-        )
+    def get_request_log(self, *args, **kwargs):
+        log = super().get_request_log(*args, **kwargs)
+        return "PriceProgress: {log} {fund_std_code} {start_date}~{end_date}".format(log=log, **kwargs)
+
+    def price_progress_payloader(self, **kwargs):
+        payload = get_price_change_progress_payload(**kwargs)
         yield payload
 
     def price_progress_parser(self, response, fund_std_code, company_code, **kwargs):
@@ -136,7 +140,6 @@ class KofiaPriceProgressScraper(KofiaScraper):
         )
         for progress in price_progresses:
             progress['표준코드'] = fund_std_code
-            # progress['회사코드'] = company_code
         return price_progresses
 
 

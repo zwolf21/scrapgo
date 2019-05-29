@@ -77,7 +77,7 @@ def get_last_date(date, of='year', fmt=None, **kwargs):
 
 
 
-def starts_after(table_name=None, date_column_name=None):
+def starts_after(table_name=None, date_column_name=None, where=None):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, start_date=None, end_date=None, output=None, **kwargs):
@@ -86,7 +86,7 @@ def starts_after(table_name=None, date_column_name=None):
                     start_date = get_ago_str_date(days=DEFAULT_AGO_DAYS)
                 elif output in ['db'] and all((table_name, date_column_name)):
                     db = TableFrame(**kwargs)
-                    start_date = db.max(table_name, date_column_name)
+                    start_date = db.max(table_name, date_column_name, where)
                 else:
                     start_date = get_ago_str_date(days=DEFAULT_AGO_DAYS)
             if end_date is None:
@@ -96,3 +96,17 @@ def starts_after(table_name=None, date_column_name=None):
         return wrapper
     return decorator
 
+def connect_db(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        db = TableFrame(**kwargs)
+        return func(*args, db=db, **kwargs)
+    return wrapper
+
+
+def print_db_progress(total_count, index, print_on=1000, prefix="", postfix=""):
+    if index % print_on == 0:
+        now = datetime.now()
+        pct = round((index*100)/total_count, 2)
+        log = f"{prefix}{index}/{total_count}({pct}%) {now.strftime('%Y%m%d %H:%M:%S')}{postfix}"        
+        print(log)
