@@ -132,6 +132,11 @@ class TableFrame(object):
         return 0
 
     def insert(self, dataframe, table, uniques, renames=None, updated=None, created=None, if_exists='append', logging=True, **kwargs):
+        if dataframe.empty is True:
+            if logging is True:
+                print(f"Dataframe is empty {0} ROW(s) was Inserted into {table} ({self._get_now()})")
+            return
+
         if renames is not None:
             dataframe = dataframe.rename(columns=renames)
         
@@ -157,6 +162,11 @@ class TableFrame(object):
 
     
     def update(self, dataframe, table, source_column, dest_column, valuemap=None, on=None, index=None, pk=None, default=None, value_type=str, pk_type=str, logging=True):
+        if dataframe.empty is True:
+            if logging is True:
+                print(f"Dataframe is empty {0} ROW(s) was Updated to {table} ({self._get_now()})")
+            return
+
         fmt = "UPDATE {table} SET {column}={value} WHERE {column} != {value} AND {pk} IN ({pk_values})"
         for value, df in dataframe.groupby(source_column):
             if isinstance(valuemap, abc.Mapping):
