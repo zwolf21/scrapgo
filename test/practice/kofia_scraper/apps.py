@@ -8,6 +8,7 @@ from .scraper import *
 from .settings import MIN_START_DATE, MAX_END_DATE
 from .db.vars import (
     펀드정보테이블명, 지수테이블명,
+    결산테이블명, 결산테이블컬럼매핑, 
 
     표준코드, 펀드명, 회사코드, 설정일, 스크랩여부, 상환여부, # FUNDINFO_TABLE
     기준일자, # FUNDINDEX_TABLE
@@ -16,7 +17,7 @@ from .db.vars import (
 
 
 @starts_after(table_name=펀드정보테이블명, date_column_name=설정일)
-@slice_dates(by='month')
+@slice_dates(by='year')
 def get_kofia_fundlist(**kwargs):
     sc = KofiaFundListScraper()
     r = sc.scrap(**kwargs)
@@ -81,4 +82,14 @@ def get_kofia_price_progress(db=None, **kwargs):
         prefix = f"{fund_name}(설정일:{initial_date})에 대한 {df.shape[0]} 개의 새로운 지수 정보 저장중..."
         print_db_progress(total_count, i, 1, prefix=prefix)
         yield df
-        
+
+
+@starts_after(table_name=결산테이블명, date_column_name=회계기말)
+@slice_dates(by='month')
+def get_kofia_settle_exso_list(apply=펀드정보테이블명, **kwargs):
+    sc = KofiaSettleExSoByDateScraper()
+    r = sc.scrap(**kwargs)
+    df =  pd.DataFrame(r['fund_exso_by_date'])
+    return df
+
+

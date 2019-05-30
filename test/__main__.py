@@ -9,7 +9,7 @@ from practice.naver_webtoon_scraper.webtoon2 import retrive_webtoon
 from practice.durginfo.druginfo_scraper import drug_search
 from practice.kofia_scraper import (
     pipe,
-    get_kofia_fundlist, get_kofia_fund_detail_list, get_kofia_price_progress
+    get_kofia_fundlist, get_kofia_fund_detail_list, get_kofia_price_progress, get_kofia_settle_exso_list
 )
 
 sys.path.append('.')
@@ -69,18 +69,9 @@ def main():
             apply = get_kofia_fund_detail_list
         elif sub_app in ['pg']:
             apply = get_kofia_price_progress
-        # if sub_app in ['fund_list', 'fl']:
-        #     print('test get_kofia_fund_list')
-        #     df = get_kofia_fund_list(args.start, args.end)
-        # elif sub_app in ['fund_detail', 'fd']:
-        #     print('test get_kofia_fund_detail')
-        #     df = get_kofia_fund_detail(args.fund_std_code)
-        # elif sub_app in ['price_progress', 'fpg']:
-        #     print('text get_kofia_fund_price_progress')
-        #     df = get_kofia_fund_price_progress(args.fund_std_code)
-        # elif sub_app in ['fund_settle_exso', 'exso']:
-        #     print('test get_kofia_fund_settle_exso')
-        #     df = get_kofia_fund_settle_exso(args.fund_std_code)
+        elif sub_app in ['ex']:
+            apply = get_kofia_settle_exso_list
+
         else:
             raise ValueError(f"{sub_app} 은 명령어 리스트에 존재하지 않습니다.")
         pipe(apply, **kwargs)

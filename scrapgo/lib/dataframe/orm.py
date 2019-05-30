@@ -169,7 +169,7 @@ class TableFrame(object):
             )
             if logging is True:
                 count = df.shape[0]
-                print(f"{count} ROW(s) was Inserted into {table} by Query: {query[:30]} ({self._get_now()})")
+                print(f"{count} ROW(s) was Updated into {table} by Query: {query[:80]}... ({self._get_now()})")
             self.con.execute(query)
     
     def delete(self, table, where=None, logging=True):

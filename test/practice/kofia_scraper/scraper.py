@@ -155,7 +155,7 @@ class KofiaSettleExSoScraper(KofiaScraper):
         ),
     ]
 
-    def fund_exso_payloader(self, fund_std_code, company_code):
+    def fund_exso_payloader(self, fund_std_code, company_code, **kwargs):
         payload = get_fund_exso_payload(fund_std_code, company_code)
         return payload
 
@@ -175,12 +175,11 @@ class KofiaSettleExSoByDateScraper(KofiaScraper):
             'http://dis.kofia.or.kr/proframeWeb/XMLSERVICES/',
             payloader='fund_exso_by_date_payloader',
             parser='fund_exso_by_date_parser',
-            refresh=True,
             name='fund_exso_by_date',
         ),
     ]
 
-    def fund_exso_by_date_payloader(self, start_date, end_date):
+    def fund_exso_by_date_payloader(self, start_date, end_date, **kwargs):
         payload = get_fund_exso_payload_by_date(start_date, end_date)
         log = f"Retrieve Fund Exso by Date Range: {start_date}~{end_date}"
         print(log)
