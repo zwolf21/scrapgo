@@ -173,6 +173,8 @@ class TableFrame(object):
                 value = valuemap.get(value, default or value)
             elif callable(valuemap):
                 value = valuemap(value)
+            else:
+                value = default or value
             
             if value_type is str:
                 value = f'"{value}"'
