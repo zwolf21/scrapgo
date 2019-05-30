@@ -40,7 +40,7 @@ apps = {
 
 def pipe(app, **kwargs):
     output = kwargs.get('output')
-    dbconn = kwargs.get('path_connect_info_jsonfile')
+    dbconn = kwargs.get('db_conf_path')
     meta = apps.get(app)
     if meta is None:
         raise ValueError(
@@ -58,7 +58,7 @@ def pipe(app, **kwargs):
             dataframe2path(dataframe, filename, extension=output)
     elif output in ['db']:
         db = TableFrame(
-            path_connect_info_jsonfile=dbconn
+            db_conf_path=dbconn
         )
         if not meta.table:
             raise ValueError("DB 로 Insert 할 테이블명이 설정 되지않았 습니다.")

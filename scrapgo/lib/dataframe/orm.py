@@ -5,7 +5,7 @@ import pandas as pd
 import pymysql
 from sqlalchemy import create_engine
 
-from scrapgo.utils.fileutils import get_file_extension, read_json
+from scrapgo.utils.fileutils import get_file_extension, read_json, read_conf
 from .dfutils import get_difference_from
 
 
@@ -32,11 +32,18 @@ def _join_columns(df, column, type=str):
 
 class TableFrame(object):
 
-    def __init__(self, path_connect_info_jsonfile=None, **conn_info):
+    def __init__(self, db_conf_path=None, **conn_info):
         self.con = None
-        if path_connect_info_jsonfile:
-            if get_file_extension(path_connect_info_jsonfile) == '.json':
-                conn_info = read_json(path_connect_info_jsonfile)
+        if db_conf_path is not None:
+            ext = get_file_extension(db_conf_path)
+            if ext in ['.json']:
+                conn_info = read_json(db_conf_path)
+            elif ext in ['.cnf', '.conf']:
+                conn_info = read_conf(db_conf_path, header='database')
+            else:
+                raise ValueError(
+                    f"{ext} is not DB connection setting file extension(Only support .json, .cnf, .conf)"
+                )  
         self.con = self._get_db_connection(**conn_info)
 
     def __del__(self):

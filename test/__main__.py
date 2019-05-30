@@ -34,7 +34,7 @@ def main():
     argparser.add_argument('-o', '--output', type=str)
     argparser.add_argument('-fund_std_code', '--fund_std_code')
     argparser.add_argument('-cd', '--code')
-    argparser.add_argument('-conn', '--path_connect_info_jsonfile', type=str)
+    argparser.add_argument('-conn', '--db_conf_path', type=str)
 
     args = argparser.parse_args()
     try:
