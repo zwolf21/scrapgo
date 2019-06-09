@@ -5,7 +5,7 @@ from dateutil.relativedelta import relativedelta
 from dateutil.parser import parse
 from dateutil.rrule import rrule, MONTHLY, YEARLY
 
-from .settings import OUTPUT_FILE_FORMAT, DEFAULT_AGO_DAYS, DATESTR_FMT
+from .settings import OUTPUT_FILE_FORMAT, DEFAULT_AGO_DAYS, DATESTR_FMT, MIN_START_DATE
 from scrapgo.lib.dataframe import TableFrame
 
 def datetime2str(datetime, fmt=DATESTR_FMT, **kwargs):
@@ -86,7 +86,7 @@ def starts_after(table_name=None, date_column_name=None, where=None):
                     start_date = get_ago_str_date(days=DEFAULT_AGO_DAYS)
                 elif output in ['db'] and all((table_name, date_column_name)):
                     db = TableFrame(**kwargs)
-                    start_date = db.max(table_name, date_column_name, where)
+                    start_date = db.max(table_name, date_column_name, where) or MIN_START_DATE
                 else:
                     start_date = get_ago_str_date(days=DEFAULT_AGO_DAYS)
             if end_date is None:

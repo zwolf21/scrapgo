@@ -1,5 +1,6 @@
 import os
 import json
+import configparser
 
 
 def mkdir_p(path):
@@ -15,6 +16,14 @@ def cp(path, content):
 def read_json(path):
     with open(path, encoding='utf-8') as fp:
         return json.loads(fp.read())
+
+
+def read_conf(path, header=None):
+    conf = configparser.ConfigParser()
+    conf.read(path)
+    if header:
+        return conf[header]
+    return conf
 
 
 def parse_jsonp(jsonp, **kwargs):

@@ -5,7 +5,7 @@ import pandas as pd
 import pymysql
 from sqlalchemy import create_engine
 
-from scrapgo.utils.fileutils import get_file_extension, read_json
+from scrapgo.utils.fileutils import get_file_extension, read_json, read_conf
 from .dfutils import get_difference_from
 
 
@@ -32,11 +32,18 @@ def _join_columns(df, column, type=str):
 
 class TableFrame(object):
 
-    def __init__(self, path_connect_info_jsonfile=None, **conn_info):
+    def __init__(self, db_conf_path=None, **conn_info):
         self.con = None
-        if path_connect_info_jsonfile:
-            if get_file_extension(path_connect_info_jsonfile) == '.json':
-                conn_info = read_json(path_connect_info_jsonfile)
+        if db_conf_path is not None:
+            ext = get_file_extension(db_conf_path)
+            if ext in ['.json']:
+                conn_info = read_json(db_conf_path)
+            elif ext in ['.cnf', '.conf']:
+                conn_info = read_conf(db_conf_path, header='database')
+            else:
+                raise ValueError(
+                    f"{ext} is not DB connection setting file extension(Only support .json, .cnf, .conf)"
+                )  
         self.con = self._get_db_connection(**conn_info)
 
     def __del__(self):
@@ -125,6 +132,11 @@ class TableFrame(object):
         return 0
 
     def insert(self, dataframe, table, uniques, renames=None, updated=None, created=None, if_exists='append', logging=True, **kwargs):
+        if dataframe.empty is True:
+            if logging is True:
+                print(f"Dataframe is empty {0} ROW(s) was Inserted into {table} ({self._get_now()})")
+            return
+
         if renames is not None:
             dataframe = dataframe.rename(columns=renames)
         
@@ -150,12 +162,19 @@ class TableFrame(object):
 
     
     def update(self, dataframe, table, source_column, dest_column, valuemap=None, on=None, index=None, pk=None, default=None, value_type=str, pk_type=str, logging=True):
+        if dataframe.empty is True:
+            if logging is True:
+                print(f"Dataframe is empty {0} ROW(s) was Updated to {table} ({self._get_now()})")
+            return
+
         fmt = "UPDATE {table} SET {column}={value} WHERE {column} != {value} AND {pk} IN ({pk_values})"
         for value, df in dataframe.groupby(source_column):
             if isinstance(valuemap, abc.Mapping):
                 value = valuemap.get(value, default or value)
             elif callable(valuemap):
                 value = valuemap(value)
+            else:
+                value = default or value
             
             if value_type is str:
                 value = f'"{value}"'
@@ -169,7 +188,7 @@ class TableFrame(object):
             )
             if logging is True:
                 count = df.shape[0]
-                print(f"{count} ROW(s) was Inserted into {table} by Query: {query[:30]} ({self._get_now()})")
+                print(f"{count} ROW(s) was Updated into {table} by Query: {query[:80]}... ({self._get_now()})")
             self.con.execute(query)
     
     def delete(self, table, where=None, logging=True):
