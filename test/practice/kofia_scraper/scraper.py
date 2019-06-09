@@ -25,12 +25,11 @@ from .scrap_mappings import (
 )
 
 
-
 class KofiaScraper(LinkRelayScraper):
     CACHE_NAME = 'PROFP_SCRAP_CACHE'
     REQUEST_DELAY = 0
     RETRY_INTERVAL_SECONDS = 10, 100, 1000,
-    # REQUEST_LOGGING = 
+    # REQUEST_LOGGING =
 
 
 class KofiaFundListScraper(KofiaScraper):
@@ -43,12 +42,13 @@ class KofiaFundListScraper(KofiaScraper):
             name='fund_list'
         )
     ]
+
     def get_request_log(self, *args, **kwargs):
         # print('get_request_log:', kwargs)
         log = super().get_request_log(*args, **kwargs)
-        return "FUND_LIST: {log} {start_date}~{end_date}".format(log=log,**kwargs)
+        return "FUND_LIST: {log} {start_date}~{end_date}".format(log=log, **kwargs)
 
-    def fund_list_payloader(self,**kwargs):
+    def fund_list_payloader(self, **kwargs):
         # log = f"Retrieve FundList by Date Range: {start_date}~{end_date}"
         # print(log)
         payload = get_fund_list_payload(**kwargs)
@@ -56,10 +56,9 @@ class KofiaFundListScraper(KofiaScraper):
 
     def fund_list_parser(self, response, **kwargs):
         soup = response.scrap.soup
-        fund_list = self.parse_xml_table_tag(soup, 'selectmeta', SCRAPMAP_FUND_LIST_COLUMNS)
+        fund_list = self.parse_xml_table_tag(
+            soup, 'selectmeta', SCRAPMAP_FUND_LIST_COLUMNS)
         return fund_list
-    
-
 
 
 class KofiaFundInfoScraper(KofiaScraper):
@@ -140,6 +139,7 @@ class KofiaPriceProgressScraper(KofiaScraper):
         )
         for progress in price_progresses:
             progress['표준코드'] = fund_std_code
+            progress['fundinfo_id'] = fund_std_code
         return price_progresses
 
 

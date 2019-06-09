@@ -54,7 +54,7 @@
     '과표기준가격': 'standardassstdcot',
     '설정원본': 'uoriginalamt',
     'KOSPI': 'kospiepn',
-    'KOSPI200': 'kospi20epn',
+    'KOSPI200': 'kospi200epn',
     # 'KOSPI200': 'kospiepn',  # DB와 안맞아서 아래 거로 바꿈
     'KOSDAQ': 'kosdaqepn',
     '국공채(3년만기)': 'tbondbnd3y',
@@ -92,10 +92,10 @@ DBMAP_RW_FUNDSETTLE = {
     'updated': "mod_date",
 }
 
-## 자주쓰는 DB 테이블 접근 변수
+# 자주쓰는 DB 테이블 접근 변수
 
-펀드정보테이블명 = 'RW_FUNDINFO'
-지수테이블명 = 'RW_FUNDINDEX'
+펀드정보테이블명 = 'KOFIA_FUNDINFO'
+지수테이블명 = 'KOFIA_FUNDINDEX'
 결산테이블명 = 'RW_FUNDSETTLE'
 
 
