@@ -304,14 +304,16 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
         self._stop = True
 
     def reducer(self, parsed, name, results):
-        if parsed is None:
-            return
         if isinstance(parsed, (str, bytes)):
             results[name].append(parsed)
         elif isinstance(parsed, abc.Mapping):
             results[name].append(parsed)
         elif isinstance(parsed, abc.Iterable):
             results[name].extend(list(parsed))
+        elif parsed is None:
+            results[name].extend([])
+        else:
+            results[name].append(parsed)
 
     def get_action(self, name, many=False):
         actions = []
