@@ -8,9 +8,10 @@ def mkdir_p(path):
         os.makedirs(path, exist_ok=True)
 
 
-def cp(path, content):
-    with open(path, 'wb') as fp:
-        fp.write(content)
+def cp(content, path, overwrite=True):
+    if overwrite:
+        with open(path, 'wb') as fp:
+            fp.write(content)
 
 
 def read_json(path):
@@ -32,5 +33,5 @@ def parse_jsonp(jsonp, **kwargs):
 
 
 def get_file_extension(path):
-	fn, ext = os.path.splitext(path)
-	return ext
+    fn, ext = os.path.splitext(path)
+    return ext
