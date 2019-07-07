@@ -9,9 +9,12 @@ def mkdir_p(path):
 
 
 def cp(content, path, overwrite=True):
-    if overwrite:
-        with open(path, 'wb') as fp:
-            fp.write(content)
+    if not overwrite:
+        if os.path.exists(path):
+            return
+
+    with open(path, 'wb') as fp:
+        fp.write(content)
 
 
 def read_json(path):
