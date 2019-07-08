@@ -11,6 +11,7 @@ from practice.kofia_scraper import (
     pipe,
     get_kofia_fundlist, get_kofia_fund_detail_list, get_kofia_price_progress, get_kofia_settle_exso_list
 )
+from practice.codingforentrepreneurs import download_courses, download_projects
 
 sys.path.append('.')
 
@@ -59,6 +60,16 @@ def main():
             'q': args.search
         }
         drug_search(params)
+
+    if app in ['codingforentrepreneurs', 'cf']:
+        params = {
+            'base_dir': 'media/codingforentrepreneurs'
+        }
+        for ctg in args.keywords[1:]:
+            if ctg == 'courses':
+                download_courses(params)
+            if ctg == 'projects':
+                download_projects(params)
 
     kwargs = dict(args._get_kwargs())
     if app in ['kofia']:
