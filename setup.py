@@ -33,7 +33,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.1.7',
+    version='0.1.8',
 
     description='Scraping library by crawling link patterns, url and parsing',
     # long_description=get_long_description(),
@@ -73,7 +73,7 @@ setup(
     # requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=['requests', 'requests-cache',
-        'bs4', 'fake-useragent', 'jinja2',
+        'bs4', 'fake-useragent', 'jinja2', 'pandas', 'pymysql', 'sqlalchemy',
     ],
 
     # List additional groups of dependencies here (e.g. development

@@ -3,7 +3,7 @@ from urllib.parse import quote, quote_plus
 
 from scrapgo import LinkRelayScraper, url
 from scrapgo.utils import urljoin, parse_src
-from scrapgo.utils.fileutils import mkdir_p, cp
+from scrapgo.utils.fileutils import mkdir_p
 
 from .utils import encodepath, transpath
 from .base import BaseScraper
@@ -127,10 +127,5 @@ class CodingForCoursesScraper(BaseScraper):
         )
         save_to = transpath(save_to)
         url = encodepath(url)
-        try:
-            r = self._get(url)
-        except:
-            logger.error(save_to)
-        else:
-            cp(r.content, save_to, overwrite=False)
+        self._save_media(url, save_to)
         return lecture

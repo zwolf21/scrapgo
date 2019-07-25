@@ -98,10 +98,5 @@ class CodingForProjectsScraper(BaseScraper):
         save_to = os.path.join(base_dir, 'projects', self.topic_slug, fn)
         save_to = transpath(save_to)
         url = encodepath(url)
-        try:
-            r = self._get(url)
-        except:
-            logger.error(save_to)
-        else:
-            cp(r.content, save_to, overwrite=False)
+        self._save_media(url, save_to)
         return lecture
