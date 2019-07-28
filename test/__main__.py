@@ -12,6 +12,7 @@ from practice.kofia_scraper import (
     get_kofia_fundlist, get_kofia_fund_detail_list, get_kofia_price_progress, get_kofia_settle_exso_list
 )
 from practice.codingforentrepreneurs import download_courses, download_projects
+from practice.dailypharm.modules import PharmRecurtScraper
 
 sys.path.append('.')
 
@@ -46,6 +47,10 @@ def main():
     context = {
         'save_to': MEDIA_ROOT
     }
+
+    if app in ['daily', 'dp']:
+        phr = PharmRecurtScraper()
+        phr.scrap()
 
     if app in ['webtoon', 'toon']:
         context['titleId'] = args.titleId
