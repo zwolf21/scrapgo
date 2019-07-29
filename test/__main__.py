@@ -12,7 +12,7 @@ from practice.kofia_scraper import (
     get_kofia_fundlist, get_kofia_fund_detail_list, get_kofia_price_progress, get_kofia_settle_exso_list
 )
 from practice.codingforentrepreneurs import download_courses, download_projects
-from practice.dailypharm.modules import PharmRecurtScraper
+from practice.dailypharm import get_dailypharm_recruit
 
 sys.path.append('.')
 
@@ -37,6 +37,7 @@ def main():
     argparser.add_argument('-fund_std_code', '--fund_std_code')
     argparser.add_argument('-cd', '--code')
     argparser.add_argument('-conn', '--db_conf_path', type=str)
+    argparser.add_argument('-pg', '--page_limit', type=int)
 
     args = argparser.parse_args()
     try:
@@ -49,8 +50,10 @@ def main():
     }
 
     if app in ['daily', 'dp']:
-        phr = PharmRecurtScraper()
-        phr.scrap()
+        r = get_dailypharm_recruit(
+            page_limit=args.page_limit
+        )
+        print(r)
 
     if app in ['webtoon', 'toon']:
         context['titleId'] = args.titleId
