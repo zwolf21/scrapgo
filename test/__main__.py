@@ -1,7 +1,7 @@
 import argparse
 import os
 import sys
-
+from pprint import pprint
 import pandas as pd
 
 from practice.naver_kin_scraper.kin import naver_kin_with_image
@@ -53,7 +53,7 @@ def main():
         r = get_dailypharm_recruit(
             page_limit=args.page_limit
         )
-        print(r)
+        pprint(r[0])
 
     if app in ['webtoon', 'toon']:
         context['titleId'] = args.titleId
