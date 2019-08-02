@@ -20,7 +20,9 @@ class PharmRecurtScraper(LinkRelayScraper):
         urlpattern(
             r'^http://job.dailypharm.com/JobUsers/JobOffer/JobOffer_View.html\?mode=(?P<view>.*)&ID=(?P<id>\d+)&smode=(?P<smode>.*)&subType=(?P<subType>.*)&AdType=(?P<AdType>\d+)&AdType2=(?P<AdType2>\d+)&nowType=(?P<nowType>.*)&listAll=(?P<listAll>.+)&retStart=(?P<retStart>\d*)&searchWork1=(?P<searchWork1>.*)&searchWork2=(?P<serachWork2>.*)&searchSiDo=(?P<searchSiDo>.*)&searchGuGun=(?P<searchGuGun>.*)&searchDong=(?P<searchDong>.*)$',
             name='detail',
-            parser='detail_parser'
+            parser='detail_parser',
+            filter='detail_filter',
+            breaker='detail_breaker',
         ),
         url(
             'http://job.dailypharm.com/JobUsers/JobOffer/AdMemoView.html',
@@ -57,8 +59,15 @@ class PharmRecurtScraper(LinkRelayScraper):
     def list_parser(self, response, **kwargs):
         print('list_parser:', response.url)
 
+    def detail_filter(self, link, query, match, **kwargs):
+        return True
+
+    def detail_breaker(self, response, **kwargs):
+        print('detail_breaker:', response.url)
+        return True
+
     def detail_parser(self, response, **kwargs):
-        # print('detail_parser:', response.url)
+        print('detail_parser:', response.url)
         soup = response.scrap.soup
         m = response.scrap.match
         self.id = m('id')

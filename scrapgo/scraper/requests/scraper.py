@@ -48,6 +48,7 @@ class LinkRelayScraper(SoupParserMixin, CachedRequests):
         if not self.main_filter(link, query, match, **kwargs):
             return False
         if filter:
+            filter = self._get_method(filter, 'filter')
             if not filter(link, query, match, **kwargs):
                 return False
         return True
